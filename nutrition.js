@@ -18,6 +18,8 @@ const IMPORT_CHUNK = 400;
 const SVG_NS = "http://www.w3.org/2000/svg";
 // Protein (g) is drawn x10 so its line lands next to the calorie line on the same axis.
 const PROTEIN_SCALE = 10;
+// Top value used to size the empty chart's axis (calories, before any data exists)
+const EMPTY_CHART_MAX = 2500;
 // Drawing area in SVG units; the SVG scales to the screen width, so 360 is about phone size.
 const CHART = { width: 360, height: 300, left: 46, right: 22, top: 14, bottom: 36 };
 
@@ -30,7 +32,6 @@ const avgCaloriesEl = document.getElementById("avg-calories");
 const avgProteinEl = document.getElementById("avg-protein");
 const daysLoggedEl = document.getElementById("days-logged");
 const chartEl = document.getElementById("chart");
-const chartEmptyEl = document.getElementById("chart-empty");
 
 // one document per day, named by its date key; fields: calories, protein (number or null)
 const nutritionRef = collection(db, "nutrition");
@@ -338,14 +339,10 @@ function renderChart() {
 
   const allValues = series.flatMap((item) => item.scaled).filter((value) => value !== null);
   const hasData = allValues.length > 0;
-  // svg elements have no .hidden property, so the attribute is toggled directly
-  chartEl.toggleAttribute("hidden", !hasData);
-  chartEmptyEl.hidden = hasData;
-  if (!hasData) {
-    return;
-  }
 
-  const scale = niceScale(Math.max(...allValues));
+  // With no data the axes are still drawn, on a typical scale, so the graph is visible from
+  // day one instead of appearing only after the first entry.
+  const scale = niceScale(hasData ? Math.max(...allValues) : EMPTY_CHART_MAX);
   const plotWidth = CHART.width - CHART.left - CHART.right;
   const plotHeight = CHART.height - CHART.top - CHART.bottom;
   const xAt = (index) => CHART.left + (count === 1 ? plotWidth / 2 : (index * plotWidth) / (count - 1));
@@ -378,6 +375,16 @@ function renderChart() {
     const label = svgEl("text", { x: x, y: baseline + 19, "text-anchor": "middle" });
     label.textContent = labelFromKey(shownKeys[index]);
     chartEl.append(label);
+  }
+
+  if (!hasData) {
+    const note = svgEl("text", {
+      class: "placeholder",
+      x: CHART.left + plotWidth / 2, y: CHART.top + plotHeight / 2, "text-anchor": "middle",
+    });
+    note.textContent = "No data yet";
+    chartEl.append(note);
+    return;
   }
 
   const dotSize = Math.max(4, Math.min(9, (plotWidth / count) * 0.5));
