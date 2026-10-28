@@ -1,17 +1,18 @@
 :root {
-  --bg: #fafafa;
+  /* grey is the main color; white cards, near-black text and blue accents sit on top of it */
+  --bg: #dcdde1;
   --surface: #ffffff;
-  --surface-2: #f2f2f3;
-  --ink: #0a0a0a;
-  --muted: #6b6f76;
-  --line: #e4e4e7;
-  --line-strong: #cfd1d6;
+  --surface-2: #eceef1;
+  --ink: #14161a;
+  --muted: #555a64;
+  --line: #c3c6cd;
+  --line-strong: #a3a8b1;
   --accent: #2563eb;
-  --accent-line: #2563eb;
-  --accent-soft: rgba(37, 99, 235, 0.1);
+  --accent-line: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.12);
   --on-accent: #ffffff;
-  --danger: #d92d20;
-  --danger-soft: rgba(217, 45, 32, 0.08);
+  --danger: #c42b1c;
+  --danger-soft: rgba(196, 43, 28, 0.1);
   --bar-border: #000000;
   --cell: 52px;
   /* An old-book serif for the quotes: Baskerville ships with macOS and iOS */
@@ -21,19 +22,20 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #000000;
-    --surface: #0a0a0a;
-    --surface-2: #141415;
-    --ink: #f4f4f5;
-    --muted: #8b8f98;
-    --line: #232326;
-    --line-strong: #34343a;
-    /* the button blue stays the same; text, lines and chart use a lighter blue to read on black */
-    --accent-line: #5b9bff;
-    --accent-soft: rgba(91, 155, 255, 0.14);
-    --danger: #ff6b60;
-    --danger-soft: rgba(255, 107, 96, 0.12);
-    --bar-border: #2a2a2e;
+    /* dark grey rather than black: high contrast without the glare of white on pure black */
+    --bg: #24262a;
+    --surface: #2f3237;
+    --surface-2: #383b41;
+    --ink: #eceef2;
+    --muted: #a2a7b0;
+    --line: #3f434a;
+    --line-strong: #565b64;
+    /* the button blue stays the same; text, lines and chart use a lighter blue to read on grey */
+    --accent-line: #7aa7ff;
+    --accent-soft: rgba(122, 167, 255, 0.16);
+    --danger: #ff7a70;
+    --danger-soft: rgba(255, 122, 112, 0.14);
+    --bar-border: #4a4e56;
   }
 }
 
