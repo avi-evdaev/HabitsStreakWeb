@@ -5,20 +5,22 @@
   <!-- viewport-fit=cover + the meta below make it look right when added to the iPhone home screen -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#dcdde1" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#24262a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <title>Nutrition</title>
-  <link rel="icon" type="image/png" href="favicon.png?v=24">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=24">
-  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="icon" type="image/png" href="favicon.png?v=25">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=25">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
-  <main>
-    <header class="bar">
+  <header class="bar">
+    <div class="bar-inner">
       <a class="back-arrow" href="./" aria-label="Back to home"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg></a>
-      <a class="logo" href="./"><img src="logo.png?v=24" alt="PROductive home" width="44" height="44"></a>
+      <a class="logo" href="./"><img src="logo.png?v=25" alt="PROductive home" width="44" height="44"></a>
       <h1>Nutrition</h1>
-    </header>
+    </div>
+  </header>
+  <main>
 
     <!-- shown until Firebase reports whether someone is signed in, so the page is never blank -->
     <p id="checking" class="gate-text">Checking sign-in&hellip;</p>
@@ -80,9 +82,9 @@
     </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 24 &middot; 2026-10-29 01:27</footer>
+    <footer id="build">Build 25 &middot; 2026-10-29 01:29</footer>
   </main>
 
-  <script type="module" src="nutrition.js?v=24"></script>
+  <script type="module" src="nutrition.js?v=25"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
   --bg: #dcdde1;
   --surface: #ffffff;
   --surface-2: #eceef1;
-  --ink: #14161a;
+  --ink: #000000;
   --muted: #555a64;
   --line: #c3c6cd;
   --line-strong: #a3a8b1;
@@ -13,7 +13,14 @@
   --on-accent: #ffffff;
   --danger: #c42b1c;
   --danger-soft: rgba(196, 43, 28, 0.1);
-  --bar-border: #000000;
+  /* dark-grey panels and secondary buttons: white text on dark grey */
+  --panel: #2c2e33;
+  --panel-ink: #ffffff;
+  --panel-muted: #c9ccd2;
+  --btn2-bg: #2c2e33;
+  --btn2-border: #2c2e33;
+  --btn2-ink: #ffffff;
+  --btn2-hover: #3d4047;
   --cell: 52px;
   /* An old-book serif for the quotes: Baskerville ships with macOS and iOS */
   --book: Baskerville, "Baskerville Old Face", "Libre Baskerville", Georgia, "Times New Roman", serif;
@@ -35,7 +42,14 @@
     --accent-soft: rgba(122, 167, 255, 0.16);
     --danger: #ff7a70;
     --danger-soft: rgba(255, 122, 112, 0.14);
-    --bar-border: #4a4e56;
+    /* on dark grey the panels go darker than the page instead */
+    --panel: #17181b;
+    --panel-ink: #eceef2;
+    --panel-muted: #a9adb6;
+    --btn2-bg: #17181b;
+    --btn2-border: #4a4e56;
+    --btn2-ink: #eceef2;
+    --btn2-hover: #202226;
   }
 }
 
@@ -56,26 +70,34 @@ body {
         "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   /* keeps content clear of the iPhone notch and home indicator */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-           env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 main {
   max-width: 520px;
   margin: 0 auto;
-  padding: 32px 20px 32px;
+  padding: 24px 20px 32px;
 }
 
-/* The black app bar stays black in both themes: the logo's background is pure black. */
+/* The app bar: full width, pure black in both themes, and it stays at the top while you scroll.
+   It also reaches under the iPhone status bar, which the black theme-color blends into. */
 .bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #000000;
+  color: #ffffff;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+/* same width as the page column below, so the logo lines up with the content */
+.bar-inner {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 0 0 24px;
-  padding: 10px 14px;
-  background: #000000;
-  color: #ffffff;
-  border: 1px solid var(--bar-border);
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 10px 20px;
 }
 
 .logo { display: block; flex: none; line-height: 0; }
@@ -93,7 +115,8 @@ main {
   /* 44px is Apple's minimum comfortable tap target */
   width: 44px;
   height: 44px;
-  margin-left: -6px;
+  /* pulls the arrow's glyph (not its tap box) in line with the page's left edge */
+  margin-left: -14px;
   color: #ffffff;
 }
 .back-arrow:hover { background: rgba(255, 255, 255, 0.14); }
@@ -236,9 +259,8 @@ input::placeholder { color: var(--muted); }
   align-items: center;
   justify-content: center;
   width: 76px;
-  background: var(--surface-2);
-  border-right: 1px solid var(--line);
-  color: var(--accent-line);
+  background: #000000;
+  color: #ffffff;
   font-size: 1.4rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -265,15 +287,15 @@ input::placeholder { color: var(--muted); }
 /* ---------- pomodoro ---------- */
 
 button.block {
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  color: var(--ink);
+  background: var(--btn2-bg);
+  border: 1px solid var(--btn2-border);
+  color: var(--btn2-ink);
   font: inherit;
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
 }
-button.block:hover { background: var(--surface-2); }
+button.block:hover { background: var(--btn2-hover); }
 button.block.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 button.block.primary:hover { background: var(--accent); filter: brightness(0.92); }
 button.block:active { opacity: 0.85; }
@@ -327,8 +349,9 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 
 .clock {
   padding: 32px 8px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--panel);
+  border: 1px solid var(--panel);
+  color: var(--panel-ink);
   text-align: center;
   line-height: 1;
   /* scales with the screen so "25:00" fills a phone, and "180:00" still fits */
@@ -340,7 +363,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 }
 /* a blue clock marks a break; an inverted one marks the end */
 .clock.break { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.clock.done { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.clock.done { background: #000000; border-color: #000000; color: #ffffff; }
 
 .pips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
 .pip { width: 20px; height: 20px; border: 1px solid var(--line-strong); }
@@ -374,8 +397,8 @@ thead th {
   top: 0;
   z-index: 1;
   padding: 12px 8px;
-  background: var(--surface-2);
-  color: var(--muted);
+  background: #000000;
+  color: #d4d6db;
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -477,9 +500,13 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 .featured {
   margin-bottom: 24px;
   padding: 18px 18px 16px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--panel);
+  border: 1px solid var(--panel);
+  color: var(--panel-ink);
 }
+.featured .featured-quote { border-color: #5c6068; }
+.featured .featured-quote::before { color: #8fb4ff; }
+.featured .quote-author { color: var(--panel-muted); }
 
 .featured-empty {
   margin: 0;
@@ -487,7 +514,7 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
   font-style: italic;
   font-size: 1.15rem;
   text-align: center;
-  color: var(--muted);
+  color: var(--panel-muted);
 }
 
 /* double rules above and below, like the ornaments of a printed page */
@@ -605,15 +632,15 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 button.small {
   min-height: 44px;
   padding: 0 14px;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  color: var(--ink);
+  background: var(--btn2-bg);
+  border: 1px solid var(--btn2-border);
+  color: var(--btn2-ink);
   font: inherit;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
 }
-button.small:hover { background: var(--surface-2); }
+button.small:hover { background: var(--btn2-hover); }
 
 #build {
   margin-top: 32px;
