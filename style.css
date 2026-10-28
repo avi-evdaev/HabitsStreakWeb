@@ -36,7 +36,8 @@ body {
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 24px 24px;
   color: var(--ink);
-  font: 16px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* Futura ships with macOS and iOS; the others cover Windows and Android */
+  font: 16px/1.4 Futura, "Century Gothic", "Trebuchet MS", Arial, sans-serif;
   /* keeps content clear of the iPhone notch and home indicator */
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
            env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -45,61 +46,64 @@ body {
 main {
   max-width: 520px;
   margin: 0 auto;
-  padding: 40px 20px 32px;
+  padding: 32px 20px 32px;
 }
 
+/* Fixed black with white text in both themes. The border (and shadow) use --ink so the
+   banner stays visible against the black page in dark mode. */
 h1 {
-  display: inline-block;
   margin: 0 0 28px;
-  padding: 8px 14px;
-  background: var(--ink);
-  color: var(--bg);
-  font-size: 1.1rem;
+  padding: 16px 18px;
+  background: #0b0b0b;
+  color: #ffffff;
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+  font-size: 1.3rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 ul { list-style: none; margin: 0; padding: 0; }
 
-/* rows and the add form share one look: thick border plus a hard offset shadow */
-li,
-form {
+li {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 8px;
   background: var(--bg);
   border: 2px solid var(--ink);
   box-shadow: 5px 5px 0 var(--ink);
 }
 
-li { margin-bottom: 18px; min-height: var(--cell); }
-
-/* a 2px rule between cells so each row reads as a strip of squares */
-li > * + * { border-left: 2px solid var(--ink); }
-
 .name {
   flex: 1;
-  display: flex;
-  align-items: center;
-  padding: 8px 14px;
+  padding: 0 6px;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
+/* Fixed width AND height, with flex-shrink off, so these stay true squares even when a
+   long habit name wraps onto two lines. 52px is also above Apple's 44px tap-target minimum. */
+.count,
+button.icon {
+  width: var(--cell);
+  height: var(--cell);
+  flex-shrink: 0;
+  border: 2px solid var(--ink);
+}
+
 .count {
-  width: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-/* 52px cells are above Apple's 44px minimum tap target */
 button.icon {
-  width: var(--cell);
-  border: 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -108,7 +112,7 @@ button.icon {
   cursor: pointer;
 }
 button.icon:hover { background: var(--ink); color: var(--bg); }
-button.del:hover { background: var(--danger); color: #fff; }
+button.del:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
 button.icon:active { opacity: 0.7; }
 
 /* the accent glyph is fixed black on yellow in both themes, so contrast never flips */
@@ -119,21 +123,28 @@ button.add {
   font-weight: 700;
 }
 button.inc:hover,
-button.add:hover { background: #0b0b0b; color: var(--accent); }
+button.add:hover { background: #0b0b0b; border-color: #0b0b0b; color: var(--accent); }
 
 button.icon:focus-visible,
-input:focus-visible { outline: 3px solid var(--ink); outline-offset: -5px; }
+input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
-form { margin-top: 28px; }
-form > button.add { border-left: 2px solid var(--ink); }
+form {
+  display: flex;
+  gap: 14px;
+  margin-top: 28px;
+  /* room on the right for the add button's hard shadow */
+  padding-right: 5px;
+}
+button.add { box-shadow: 4px 4px 0 var(--ink); }
 
 input {
   flex: 1;
   min-width: 0;
   height: var(--cell);
   padding: 0 14px;
-  border: 0;
-  background: transparent;
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  background: var(--bg);
   color: var(--ink);
   font: inherit;
   /* iOS Safari zooms the page on focus if the input font is under 16px */
