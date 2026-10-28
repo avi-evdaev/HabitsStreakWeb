@@ -565,6 +565,9 @@ td input.invalid { background: var(--danger); color: #fff; }
 .quote-body .quote-author { text-align: left; color: var(--muted); }
 .quote-body .quote-author::before { content: "\2014\00a0"; }
 
+.home-quote { margin: 36px 0 0; }
+.home-quote .quote-text { font-size: clamp(1.15rem, 4.6vw, 1.5rem); }
+
 #another { display: block; width: 100%; height: 56px; font-size: 1.05rem; }
 
 .quote-form { display: flex; flex-direction: column; gap: 12px; margin-top: 0; padding-right: 5px; }

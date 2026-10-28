@@ -1,7 +1,7 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, deleteDoc,
-} from "./firebase.js?v=18";
+} from "./firebase.js?v=19";
 
 const MAX_TEXT = 600;
 const MAX_AUTHOR = 100;

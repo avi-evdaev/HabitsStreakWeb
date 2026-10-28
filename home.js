@@ -1,7 +1,7 @@
 import {
   db, initGate, describeFirestoreError,
   collection, doc, query, limit, getDoc, getDocs, setDoc, writeBatch,
-} from "./firebase.js?v=18";
+} from "./firebase.js?v=19";
 
 // Before accounts existed, data lived in these shared collections. It now lives under
 // users/<id>/<name>, and this page offers a one-time copy of the old data into the account.
@@ -12,6 +12,9 @@ const errorEl = document.getElementById("error");
 const statusEl = document.getElementById("status");
 const moveEl = document.getElementById("move");
 const moveNoteEl = document.getElementById("move-note");
+const quoteBoxEl = document.getElementById("home-quote");
+const quoteTextEl = document.getElementById("home-quote-text");
+const quoteAuthorEl = document.getElementById("home-quote-author");
 
 let userId = null;
 
@@ -21,6 +24,29 @@ function showError(err) {
 }
 
 const migrationDoc = () => doc(db, "users", userId, "meta", "migration");
+
+function isValidQuote(data) {
+  return data !== null && typeof data === "object" &&
+         typeof data.text === "string" && data.text.trim() !== "" &&
+         (data.author === undefined || typeof data.author === "string");
+}
+
+// Reads the account's quotes once and shows one at random. Costs one database read per quote
+// per page load, which stays far below the free daily limit for a personal collection.
+async function showRandomQuote(id) {
+  const snapshot = await getDocs(collection(db, "users", id, "quotes"));
+  const quotes = snapshot.docs.map((snap) => snap.data()).filter(isValidQuote);
+  // nothing to show, or the person signed out while the request was running
+  if (quotes.length === 0 || id !== userId) {
+    return;
+  }
+  const pick = quotes[Math.floor(Math.random() * quotes.length)];
+  // textContent, not innerHTML: quotes are user input and must not be parsed as HTML.
+  quoteTextEl.textContent = pick.text;
+  quoteAuthorEl.textContent = pick.author || "";
+  quoteAuthorEl.hidden = !pick.author;
+  quoteBoxEl.hidden = false;
+}
 
 // Looks once per account. The flag document records that the question was settled, so later
 // visits cost a single read instead of scanning the old collections.
@@ -91,11 +117,15 @@ initGate({
     userId = user.uid;
     statusEl.textContent = "Signed in: " + user.email;
     offerMove(user.uid).catch(showError);
+    showRandomQuote(user.uid).catch(showError);
     return () => {
       userId = null;
       statusEl.textContent = "";
       moveEl.hidden = true;
       moveNoteEl.hidden = true;
+      quoteBoxEl.hidden = true;
+      quoteTextEl.textContent = "";
+      quoteAuthorEl.textContent = "";
       errorEl.hidden = true;
     };
   },
