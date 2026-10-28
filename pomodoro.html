@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover + the meta below make it look right when added to the iPhone home screen -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
+  <title>Pomodoro</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <a class="back" href="./">&larr; Home</a>
+    <h1>Pomodoro</h1>
+
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <section id="setup">
+      <button id="begin" type="button" class="block big primary">Begin</button>
+
+      <div class="config">
+        <div class="field">
+          <label for="sessions">Number of sessions</label>
+          <div class="stepper" data-field="sessions">
+            <button type="button" class="icon" data-step="-1" aria-label="Fewer sessions">&minus;</button>
+            <input id="sessions" type="number" inputmode="numeric">
+            <button type="button" class="icon" data-step="1" aria-label="More sessions">+</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="focusMin">Session time (minutes)</label>
+          <div class="stepper" data-field="focusMin">
+            <button type="button" class="icon" data-step="-1" aria-label="Shorter session">&minus;</button>
+            <input id="focusMin" type="number" inputmode="numeric">
+            <button type="button" class="icon" data-step="1" aria-label="Longer session">+</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="breakMin">Break time (minutes)</label>
+          <div class="stepper" data-field="breakMin">
+            <button type="button" class="icon" data-step="-1" aria-label="Shorter break">&minus;</button>
+            <input id="breakMin" type="number" inputmode="numeric">
+            <button type="button" class="icon" data-step="1" aria-label="Longer break">+</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="run" hidden>
+      <p id="phase" class="phase"></p>
+      <div id="clock" class="clock" role="timer">00:00</div>
+      <div id="pips" class="pips" aria-hidden="true"></div>
+      <div class="controls">
+        <button id="pause" type="button" class="block wide">Pause</button>
+        <button id="stop" type="button" class="block wide">Stop</button>
+      </div>
+    </section>
+
+    <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
+    <footer id="build">Build 7 &middot; 2026-10-28 23:31</footer>
+  </main>
+
+  <script src="pomodoro.js"></script>
+</body>
+</html>

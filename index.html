@@ -7,28 +7,26 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
-  <title>Habits Streak</title>
+  <title>Mega App</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main>
-    <h1>Habits Streak</h1>
+    <h1>Mega App</h1>
 
-    <p id="error" class="error" role="alert" hidden></p>
-
-    <ul id="habit-list"></ul>
-    <p id="empty" class="empty" hidden>No habits yet.</p>
-
-    <form id="add-form">
-      <input id="new-habit" type="text" placeholder="New habit" maxlength="100"
-             autocomplete="off" aria-label="New habit name">
-      <button type="submit" class="icon add" aria-label="Add habit">+</button>
-    </form>
+    <nav class="menu">
+      <a class="tile" href="habits.html">
+        <span class="tile-num">01</span>
+        <span class="tile-name">Habits Streak</span>
+      </a>
+      <a class="tile" href="pomodoro.html">
+        <span class="tile-num">02</span>
+        <span class="tile-name">Pomodoro</span>
+      </a>
+    </nav>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 6 &middot; 2026-10-28 23:23</footer>
+    <footer id="build">Build 7 &middot; 2026-10-28 23:31</footer>
   </main>
-
-  <script src="app.js"></script>
 </body>
 </html>
