@@ -57,6 +57,18 @@
         </div>
       </section>
 
+      <section class="chart-box" aria-labelledby="chart-title">
+        <h2 id="chart-title" class="chart-title">Calories and protein by day</h2>
+        <p id="chart-empty" class="empty">Enter some data to see the graph.</p>
+        <svg id="chart" viewBox="0 0 360 300" role="img" hidden
+             aria-label="Line chart of daily calories and protein times ten. The table above has the same numbers."></svg>
+        <div class="legend">
+          <span><i class="swatch calories"></i>Calories</span>
+          <span><i class="swatch protein"></i>Protein &times; 10</span>
+        </div>
+        <p class="chart-note">Protein is plotted as grams &times; 10 so both lines share one axis.</p>
+      </section>
+
       <div class="session">
         <span id="status">Loading&hellip;</span>
         <button id="sign-out" type="button" class="small">Sign out</button>
@@ -64,7 +76,7 @@
     </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 9 &middot; 2026-10-29 00:04</footer>
+    <footer id="build">Build 10 &middot; 2026-10-29 00:30</footer>
   </main>
 
   <script type="module" src="nutrition.js"></script>
