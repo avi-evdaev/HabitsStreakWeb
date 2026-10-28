@@ -1,7 +1,7 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, onSnapshot, setDoc, writeBatch,
-} from "./firebase.js?v=19";
+} from "./firebase.js?v=20";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "nutrition.log";
@@ -399,10 +399,6 @@ function renderChart() {
         continue;
       }
       const path = run.map((point) => point.x + "," + point.y).join(" ");
-      if (item.name === "protein") {
-        // a dark under-stroke keeps the yellow line readable on the light background
-        chartEl.append(svgEl("polyline", { class: "line protein-outline", points: path }));
-      }
       chartEl.append(svgEl("polyline", { class: "line " + item.name, points: path }));
     }
 
