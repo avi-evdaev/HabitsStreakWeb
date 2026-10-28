@@ -1,132 +1,170 @@
 :root {
-  --bg: #fafaf9;
-  --fg: #141414;
-  --muted: #6b6b6b;
-  --line: #e6e6e3;
-  --accent: #141414;
-  --on-accent: #ffffff;
-  --danger: #c62828;
+  --bg: #f4f1ea;
+  --ink: #0b0b0b;
+  --muted: #5c5a54;
+  --grid: rgba(11, 11, 11, 0.07);
+  --accent: #ffd60a;
+  --danger: #d00000;
+  --cell: 52px;
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0e0e0e;
-    --fg: #f2f2f2;
-    --muted: #8c8c8c;
-    --line: #262626;
-    --accent: #f2f2f2;
-    --on-accent: #0e0e0e;
-    --danger: #ff6b6b;
+    --bg: #0b0b0b;
+    --ink: #f4f1ea;
+    --muted: #a09d94;
+    --grid: rgba(244, 241, 234, 0.08);
+    --danger: #ff4d4d;
   }
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  /* iOS gives inputs and buttons rounded corners by default; this keeps every corner square */
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg);
+  /* two 1px line layers make a square grid */
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font: 16px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   /* keeps content clear of the iPhone notch and home indicator */
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 main {
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
-  padding: 48px 20px 32px;
+  padding: 40px 20px 32px;
 }
 
 h1 {
-  margin: 0 0 24px;
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  display: inline-block;
+  margin: 0 0 28px;
+  padding: 8px 14px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 ul { list-style: none; margin: 0; padding: 0; }
 
-li {
+/* rows and the add form share one look: thick border plus a hard offset shadow */
+li,
+form {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
+  align-items: stretch;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
 }
 
-.name { flex: 1; overflow-wrap: anywhere; }
+li { margin-bottom: 18px; min-height: var(--cell); }
+
+/* a 2px rule between cells so each row reads as a strip of squares */
+li > * + * { border-left: 2px solid var(--ink); }
+
+.name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
 
 .count {
-  min-width: 2.5ch;
-  margin-right: 8px;
-  text-align: right;
-  font-size: 1.25rem;
-  font-weight: 600;
-  /* equal-width digits stop the numbers jittering as they change */
+  width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-/* 44px is Apple's minimum comfortable tap target */
+/* 52px cells are above Apple's 44px minimum tap target */
 button.icon {
-  width: 44px;
-  height: 44px;
+  width: var(--cell);
   border: 0;
-  border-radius: 50%;
   background: transparent;
-  color: var(--muted);
-  font-size: 1.25rem;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
 }
-button.icon:hover { color: var(--fg); }
-button.icon:active { opacity: 0.6; }
-button.del:hover { color: var(--danger); }
-button.icon:focus-visible,
-input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+button.icon:hover { background: var(--ink); color: var(--bg); }
+button.del:hover { background: var(--danger); color: #fff; }
+button.icon:active { opacity: 0.7; }
 
+/* the accent glyph is fixed black on yellow in both themes, so contrast never flips */
 button.inc,
 button.add {
   background: var(--accent);
-  color: var(--on-accent);
-  font-size: 1.4rem;
-  flex-shrink: 0;
+  color: #0b0b0b;
+  font-weight: 700;
 }
 button.inc:hover,
-button.add:hover { color: var(--on-accent); }
+button.add:hover { background: #0b0b0b; color: var(--accent); }
 
-form { display: flex; gap: 8px; margin-top: 24px; }
+button.icon:focus-visible,
+input:focus-visible { outline: 3px solid var(--ink); outline-offset: -5px; }
+
+form { margin-top: 28px; }
+form > button.add { border-left: 2px solid var(--ink); }
 
 input {
   flex: 1;
   min-width: 0;
-  height: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--line);
-  border-radius: 22px;
+  height: var(--cell);
+  padding: 0 14px;
+  border: 0;
   background: transparent;
-  color: var(--fg);
+  color: var(--ink);
+  font: inherit;
   /* iOS Safari zooms the page on focus if the input font is under 16px */
   font-size: 16px;
+  text-transform: uppercase;
 }
 input::placeholder { color: var(--muted); }
 
-.empty { margin: 32px 0; text-align: center; color: var(--muted); }
+.empty {
+  margin: 0 0 18px;
+  padding: 18px;
+  border: 2px dashed var(--ink);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
 
 .error {
-  padding: 10px 12px;
-  border: 1px solid var(--danger);
-  border-radius: 8px;
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  border: 2px solid var(--danger);
+  box-shadow: 5px 5px 0 var(--danger);
   color: var(--danger);
-  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 #build {
-  margin-top: 40px;
-  text-align: center;
+  margin-top: 36px;
   font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
 }
