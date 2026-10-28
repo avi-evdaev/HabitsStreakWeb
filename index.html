@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover + the meta below make it look right when added to the iPhone home screen -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#007aff">
+  <title>Habits Streak</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Habits Streak</h1>
+
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <ul id="habit-list"></ul>
+    <p id="empty" class="empty" hidden>No habits yet. Add one below.</p>
+
+    <form id="add-form">
+      <input id="new-habit" type="text" placeholder="New Habit" maxlength="100"
+             autocomplete="off" aria-label="New habit name">
+      <button type="submit" class="icon add" aria-label="Add habit">+</button>
+    </form>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

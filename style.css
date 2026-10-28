@@ -1,0 +1,100 @@
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --fg: #000000;
+  --muted: #6c6c70;
+  --border: #d1d1d6;
+  --blue: #007aff;
+  --green: #34c759;
+  --red: #ff3b30;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --fg: #ffffff;
+    --muted: #98989d;
+    --border: #38383a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* keeps content clear of the iPhone notch and home indicator */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+main {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 { font-size: 2rem; margin: 8px 0 16px; }
+
+ul { list-style: none; margin: 0; padding: 0; }
+
+li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px;
+}
+li:first-child { border-radius: 12px 12px 0 0; }
+li:last-child { border-radius: 0 0 12px 12px; border-bottom: 0; }
+li:only-child { border-radius: 12px; }
+
+.name { flex: 1; font-weight: 600; overflow-wrap: anywhere; }
+.count { font-size: 1.6rem; min-width: 2ch; text-align: right; }
+
+/* 44px is Apple's minimum comfortable tap target */
+button.icon {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+button.inc { background: var(--green); }
+button.reset { background: var(--red); }
+button.del { background: transparent; color: var(--muted); font-size: 1.2rem; }
+button.add { background: var(--blue); flex-shrink: 0; }
+
+form { display: flex; gap: 8px; margin-top: 16px; }
+
+input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--fg);
+  /* iOS Safari zooms the page on focus if the input font is under 16px */
+  font-size: 16px;
+}
+
+.empty { color: var(--muted); text-align: center; }
+
+.error {
+  background: var(--red);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+[hidden] { display: none !important; }
