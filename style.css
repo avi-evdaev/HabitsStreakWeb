@@ -51,13 +51,25 @@ main {
 
 /* Fixed black with white text in both themes. The border (and shadow) use --ink so the
    banner stays visible against the black page in dark mode. */
-h1 {
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   margin: 0 0 28px;
-  padding: 16px 18px;
+  padding: 10px 14px;
   background: #0b0b0b;
   color: #ffffff;
   border: 2px solid var(--ink);
   box-shadow: 5px 5px 0 var(--ink);
+}
+
+.logo { display: block; flex: none; line-height: 0; }
+.logo img { display: block; width: 44px; height: 44px; }
+.logo:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
+.bar.home .logo img { width: 72px; height: 72px; }
+
+.bar h1 {
+  margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -65,8 +77,8 @@ h1 {
 }
 
 /* the name is "PROductive", so the banner's usual all-caps is switched off for it */
-h1.brand { text-transform: none; font-size: 1.6rem; }
-h1.brand .pro { color: var(--accent); }
+.bar h1.brand { text-transform: none; font-size: 1.6rem; }
+.bar h1.brand .pro { color: var(--accent); }
 
 ul { list-style: none; margin: 0; padding: 0; }
 

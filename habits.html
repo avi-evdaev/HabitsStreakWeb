@@ -8,12 +8,17 @@
   <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
   <title>Habits Streak</title>
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="icon" type="image/png" href="favicon.png?v=13">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=13">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
   <main>
     <a class="back" href="./">&larr; Home</a>
-    <h1>Habits Streak</h1>
+    <header class="bar">
+      <a class="logo" href="./"><img src="logo.png?v=13" alt="PROductive home" width="44" height="44"></a>
+      <h1>Habits Streak</h1>
+    </header>
 
     <!-- shown until Firebase reports whether someone is signed in, so the page is never blank -->
     <p id="checking" class="gate-text">Checking sign-in&hellip;</p>
@@ -45,9 +50,9 @@
     </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 12 &middot; 2026-10-29 00:37</footer>
+    <footer id="build">Build 13 &middot; 2026-10-29 00:39</footer>
   </main>
 
-  <script type="module" src="habits.js?v=12"></script>
+  <script type="module" src="habits.js?v=13"></script>
 </body>
 </html>
