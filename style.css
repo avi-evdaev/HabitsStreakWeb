@@ -1,30 +1,22 @@
 :root {
-  --bg: #f2f2f7;
-  --surface: #ffffff;
-  --fg: #000000;
-  --muted: #6c6c70;
-  --border: #d1d1d6;
-  --blue: #007aff;
-  --green: #34c759;
-  --red: #ff3b30;
-  color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --fg: #ffffff;
-    --muted: #98989d;
-    --border: #38383a;
-  }
+  --fg: #fff2e6;
+  --muted: #c4a597;
+  --card: rgba(18, 6, 4, 0.8);
+  --edge: rgba(255, 90, 20, 0.4);
+  --yellow: #ffd400;
+  --orange: #ff7a00;
+  --red: #e1140a;
+  /* Single dark theme on purpose: the flame art only works on a dark background. */
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 
+html { background: #070202; }
+
 body {
   margin: 0;
-  background: var(--bg);
+  min-height: 100vh;
   color: var(--fg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   /* keeps content clear of the iPhone notch and home indicator */
@@ -32,13 +24,108 @@ body {
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+/* ---------- background art ---------- */
+
+/* position: fixed instead of background-attachment: fixed, which iOS Safari ignores */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(ellipse 120% 70% at 50% 110%, #6b0d00 0%, #230604 45%, #070202 100%);
+}
+
+.flames {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 58vh;
+  opacity: 0.95;
+}
+
+.layer.back use { fill: url(#gBack); opacity: 0.9; }
+.layer.mid use { fill: url(#gMid); }
+.layer.front use { fill: url(#gFront); }
+
+/* Only transform is animated: the browser can run it on the GPU, which keeps phones smooth. */
+.flames use {
+  animation-name: flicker;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes flicker {
+  0%, 100% { transform: scale(1, 1) rotate(0deg); }
+  25%      { transform: scale(1.05, 1.12) rotate(-2deg); }
+  50%      { transform: scale(0.96, 0.92) rotate(1.5deg); }
+  75%      { transform: scale(1.03, 1.08) rotate(2.5deg); }
+}
+
+/* Two tiled dot patterns with different tile sizes drift upward at different speeds.
+   Each animation moves exactly one tile height, so the loop has no visible jump. */
+.embers {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 90%);
+  mask-image: linear-gradient(to top, #000 10%, transparent 90%);
+}
+.embers::before,
+.embers::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  background-repeat: repeat;
+}
+.embers::before {
+  bottom: -240px;
+  background-size: 160px 240px;
+  background-image:
+    radial-gradient(circle, #ffd400 0 2px, transparent 3px),
+    radial-gradient(circle, #ff7a00 0 1.5px, transparent 2.5px);
+  background-position: 20px 40px, 100px 160px;
+  animation: rise-a 8s linear infinite;
+}
+.embers::after {
+  bottom: -330px;
+  background-size: 220px 330px;
+  background-image:
+    radial-gradient(circle, #ff9a1f 0 2.5px, transparent 3.5px),
+    radial-gradient(circle, #ffe14d 0 1px, transparent 2px);
+  background-position: 150px 90px, 40px 250px;
+  animation: rise-b 12s linear infinite;
+}
+@keyframes rise-a { to { transform: translateY(-240px); } }
+@keyframes rise-b { to { transform: translateY(-330px); } }
+
+/* ---------- content ---------- */
+
 main {
   max-width: 600px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 16px 16px 48px;
 }
 
-h1 { font-size: 2rem; margin: 8px 0 16px; }
+h1 {
+  margin: 8px 0 20px;
+  font-family: Impact, "Arial Black", "Helvetica Neue", sans-serif;
+  font-size: 2.6rem;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  /* clipped gradient gives the fire-coloured text; drop-shadow adds the glow
+     (text-shadow would be painted over the transparent fill) */
+  background: linear-gradient(180deg, #fff2a8 0%, #ffd400 35%, #ff6a00 70%, #e1140a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 2px 12px rgba(255, 80, 0, 0.6));
+}
 
 ul { list-style: none; margin: 0; padding: 0; }
 
@@ -46,55 +133,100 @@ li {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 12px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  border-left: 5px solid var(--orange);
+  border-radius: 4px;
+  box-shadow: 0 0 18px rgba(255, 60, 0, 0.18);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
-li:first-child { border-radius: 12px 12px 0 0; }
-li:last-child { border-radius: 0 0 12px 12px; border-bottom: 0; }
-li:only-child { border-radius: 12px; }
 
-.name { flex: 1; font-weight: 600; overflow-wrap: anywhere; }
-.count { font-size: 1.6rem; min-width: 2ch; text-align: right; }
+.name {
+  flex: 1;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.count {
+  min-width: 2ch;
+  text-align: right;
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: 2rem;
+  color: var(--yellow);
+  text-shadow: 0 0 12px rgba(255, 140, 0, 0.85);
+}
 
 /* 44px is Apple's minimum comfortable tap target */
 button.icon {
   width: 44px;
   height: 44px;
   border: 0;
-  border-radius: 50%;
-  color: #fff;
+  border-radius: 6px;
   font-size: 1.5rem;
+  font-weight: 900;
   line-height: 1;
   cursor: pointer;
+  transition: transform 0.08s, filter 0.15s;
 }
-button.inc { background: var(--green); }
-button.reset { background: var(--red); }
-button.del { background: transparent; color: var(--muted); font-size: 1.2rem; }
-button.add { background: var(--blue); flex-shrink: 0; }
+button.icon:hover { filter: brightness(1.15); }
+button.icon:active { transform: scale(0.92); }
+button.icon:focus-visible,
+input:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
 
-form { display: flex; gap: 8px; margin-top: 16px; }
+button.inc { background: linear-gradient(180deg, var(--yellow), var(--orange)); color: #1a0500; }
+button.reset { background: linear-gradient(180deg, #ff3b1f, #9b0b00); color: #fff; }
+button.del {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+button.add {
+  background: linear-gradient(180deg, var(--orange), var(--red));
+  color: #fff;
+  flex-shrink: 0;
+}
+
+form { display: flex; gap: 8px; margin-top: 18px; }
 
 input {
   flex: 1;
   min-width: 0;
   height: 44px;
   padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: rgba(10, 3, 2, 0.88);
   color: var(--fg);
   /* iOS Safari zooms the page on focus if the input font is under 16px */
   font-size: 16px;
 }
+input::placeholder { color: #b39386; }
 
-.empty { color: var(--muted); text-align: center; }
+.empty {
+  margin: 24px 0;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
 
 .error {
-  background: var(--red);
-  color: #fff;
   padding: 10px 12px;
-  border-radius: 10px;
+  border: 1px solid var(--yellow);
+  border-radius: 4px;
+  background: #8a0c05;
+  color: #fff;
 }
 
 [hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .flames use, .embers::before, .embers::after { animation: none; }
+}
