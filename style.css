@@ -211,19 +211,18 @@ input::placeholder { color: var(--muted); }
 /* ---------- home ---------- */
 
 .menu {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 18px;
-  /* room on the right for the tiles' hard shadow */
+  /* room on the right for the buttons' hard shadow */
   padding-right: 5px;
 }
 
+/* one wide button per app: [ yellow number | name | arrow ], like a row of square cells */
 .tile {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  aspect-ratio: 1;
-  padding: 14px;
+  align-items: stretch;
+  min-height: 84px;
   background: var(--bg);
   border: 2px solid var(--ink);
   box-shadow: 5px 5px 0 var(--ink);
@@ -231,15 +230,39 @@ input::placeholder { color: var(--muted); }
   text-decoration: none;
 }
 .tile:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+.tile:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
-.tile-num { font-size: 1.6rem; font-weight: 700; }
+.tile-num {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  background: var(--accent);
+  border-right: 2px solid var(--ink);
+  color: #000000;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
 
 .tile-name {
-  font-size: 1.05rem;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 1.2rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
+}
+
+.tile-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 /* ---------- pomodoro ---------- */
