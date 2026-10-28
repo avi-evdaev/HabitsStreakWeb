@@ -1,7 +1,7 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, increment, writeBatch,
-} from "./firebase.js?v=13";
+} from "./firebase.js?v=14";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
