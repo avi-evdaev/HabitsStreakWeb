@@ -122,10 +122,10 @@ function render() {
       count,
       makeButton("inc", "Increment " + habit.name, "+",
                  () => changeCount(habit.id, (value) => value + 1)),
-      makeButton("reset", "Reset " + habit.name, "×",
+      makeButton("reset", "Reset " + habit.name, "↺",
                  () => changeCount(habit.id, () => 0)),
       // No swipe-to-delete in a browser, so deleting gets an explicit button.
-      makeButton("del", "Delete " + habit.name, "🗑",
+      makeButton("del", "Delete " + habit.name, "×",
                  () => {
                    if (confirm("Delete \"" + habit.name + "\"?")) {
                      deleteHabit(habit.id);
