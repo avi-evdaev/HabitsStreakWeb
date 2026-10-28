@@ -8,42 +8,66 @@
   <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <title>PROductive</title>
-  <link rel="icon" type="image/png" href="favicon.png?v=17">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=17">
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="icon" type="image/png" href="favicon.png?v=18">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=18">
+  <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
   <main>
     <header class="bar home">
-      <a class="logo" href="./"><img src="logo.png?v=17" alt="PROductive logo" width="44" height="44"></a>
+      <a class="logo" href="./"><img src="logo.png?v=18" alt="PROductive logo" width="44" height="44"></a>
       <h1 class="brand"><span class="pro">PRO</span>ductive</h1>
     </header>
 
-    <nav class="menu">
-      <a class="tile" href="habits.html">
-        <span class="tile-num">01</span>
-        <span class="tile-name">Habits Streak</span>
-        <span class="tile-arrow" aria-hidden="true">&rarr;</span>
-      </a>
-      <a class="tile" href="pomodoro.html">
-        <span class="tile-num">02</span>
-        <span class="tile-name">Pomodoro</span>
-        <span class="tile-arrow" aria-hidden="true">&rarr;</span>
-      </a>
-      <a class="tile" href="nutrition.html">
-        <span class="tile-num">03</span>
-        <span class="tile-name">Nutrition</span>
-        <span class="tile-arrow" aria-hidden="true">&rarr;</span>
-      </a>
-      <a class="tile" href="quotes.html">
-        <span class="tile-num">04</span>
-        <span class="tile-name">Quotes</span>
-        <span class="tile-arrow" aria-hidden="true">&rarr;</span>
-      </a>
-    </nav>
+    <!-- shown until Firebase reports whether someone is signed in, so the page is never blank -->
+    <p id="checking" class="gate-text">Checking sign-in&hellip;</p>
+
+    <section id="gate" class="gate" hidden>
+      <p class="gate-text">Private app. Sign in to continue.</p>
+      <button id="sign-in" type="button" class="block primary">Sign in with Google</button>
+      <p id="gate-message" class="error" role="alert" hidden></p>
+    </section>
+
+    <div id="content" hidden>
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <nav class="menu">
+        <a class="tile" href="habits.html">
+          <span class="tile-num">01</span>
+          <span class="tile-name">Habits Streak</span>
+          <span class="tile-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="tile" href="pomodoro.html">
+          <span class="tile-num">02</span>
+          <span class="tile-name">Pomodoro</span>
+          <span class="tile-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="tile" href="nutrition.html">
+          <span class="tile-num">03</span>
+          <span class="tile-name">Nutrition</span>
+          <span class="tile-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="tile" href="quotes.html">
+          <span class="tile-num">04</span>
+          <span class="tile-name">Quotes</span>
+          <span class="tile-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </nav>
+
+      <!-- shown only while data from before accounts existed is still waiting to be copied over -->
+      <button id="move" type="button" class="block primary" hidden>Move my existing data into this account</button>
+      <p id="move-note" class="move-note" hidden></p>
+
+      <div class="session">
+        <span id="status" class="account">Loading&hellip;</span>
+        <button id="sign-out" type="button" class="small">Sign out</button>
+      </div>
+    </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 17 &middot; 2026-10-29 00:53</footer>
+    <footer id="build">Build 18 &middot; 2026-10-29 01:08</footer>
   </main>
+
+  <script type="module" src="home.js?v=18"></script>
 </body>
 </html>

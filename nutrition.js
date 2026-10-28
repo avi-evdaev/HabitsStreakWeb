@@ -1,7 +1,7 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, onSnapshot, setDoc, writeBatch,
-} from "./firebase.js?v=17";
+} from "./firebase.js?v=18";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "nutrition.log";
@@ -34,7 +34,9 @@ const daysLoggedEl = document.getElementById("days-logged");
 const chartEl = document.getElementById("chart");
 
 // one document per day, named by its date key; fields: calories, protein (number or null)
-const nutritionRef = collection(db, "nutrition");
+let userId = null;  // set when sign-in completes; everything lives under users/<id>/
+const nutritionCollection = () => collection(db, "users", userId, "nutrition");
+const nutritionDoc = (key) => doc(db, "users", userId, "nutrition", key);
 const saves = createSaveTracker(statusEl, showError);
 
 let log = {};              // what the database last told us (plus our own sent edits)
@@ -131,7 +133,7 @@ function sendDraft(id) {
 
   // Write only the changed field (merge), so editing calories can never wipe protein that
   // another device just saved.
-  saves.track(setDoc(doc(db, "nutrition", draft.key), { [draft.field]: draft.value }, { merge: true }));
+  saves.track(setDoc(nutritionDoc(draft.key), { [draft.field]: draft.value }, { merge: true }));
 }
 
 function queueSave(key, field, value, immediately) {
@@ -533,7 +535,7 @@ importEl.addEventListener("click", async () => {
     for (let start = 0; start < legacy.entries.length; start += IMPORT_CHUNK) {
       const batch = writeBatch(db);
       for (const [key, data] of legacy.entries.slice(start, start + IMPORT_CHUNK)) {
-        batch.set(doc(db, "nutrition", key), data, { merge: true });
+        batch.set(nutritionDoc(key), data, { merge: true });
       }
       await batch.commit();
     }
@@ -558,12 +560,14 @@ importEl.addEventListener("click", async () => {
 /* ---------- start ---------- */
 
 initGate({
-  onSignedIn() {
+  onSignedIn(user) {
+    userId = user.uid;
     renderTable();
     offerImport();
-    const unsubscribe = onSnapshot(nutritionRef, applySnapshot, showError);
+    const unsubscribe = onSnapshot(nutritionCollection(), applySnapshot, showError);
     return () => {
       unsubscribe();
+      userId = null;
       // drop the data from memory and screen when signing out
       for (const draft of drafts.values()) {
         clearTimeout(draft.timer);

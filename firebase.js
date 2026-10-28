@@ -8,8 +8,8 @@ import {
 import { getFirestore } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
 export {
-  collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
-  increment, writeBatch,
+  collection, doc, query, orderBy, limit, onSnapshot, getDoc, getDocs, addDoc, setDoc, updateDoc,
+  deleteDoc, increment, writeBatch,
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
 // These values are not secrets: they only say which project to talk to. Who may read or write
@@ -29,7 +29,9 @@ export const db = getFirestore(app);
 
 export function describeFirestoreError(err) {
   if (err && err.code === "permission-denied") {
-    return "This Google account is not allowed to use this app.";
+    // The same error means two different things, and the app cannot tell which
+    return "Access denied by the database rules. Either this Google account is not allowed, " +
+           "or the latest rules have not been published (Firebase console > Firestore > Rules).";
   }
   if (err && err.code === "unavailable") {
     return "Cannot reach the database. Check your connection.";

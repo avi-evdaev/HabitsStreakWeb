@@ -1,7 +1,7 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, increment, writeBatch,
-} from "./firebase.js?v=17";
+} from "./firebase.js?v=18";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
@@ -14,7 +14,11 @@ const inputEl = document.getElementById("new-habit");
 const importEl = document.getElementById("import");
 const statusEl = document.getElementById("status");
 
-const habitsRef = collection(db, "habits");
+// Every document lives under the signed-in user's own path (users/<id>/...), and the security
+// rules only let that user read it. userId is set when sign-in completes.
+let userId = null;
+const habitsCollection = () => collection(db, "users", userId, "habits");
+const habitDoc = (id) => doc(db, "users", userId, "habits", id);
 const saves = createSaveTracker(statusEl, showError);
 
 let habits = [];
@@ -34,7 +38,7 @@ function isValidHabit(item) {
 
 function listen() {
   // one document per habit; createdAt keeps the list in the order habits were added
-  const habitsQuery = query(habitsRef, orderBy("createdAt"));
+  const habitsQuery = query(habitsCollection(), orderBy("createdAt"));
   return onSnapshot(habitsQuery, (snapshot) => {
     habits = [];
     for (const snap of snapshot.docs) {
@@ -51,20 +55,20 @@ function listen() {
 }
 
 function addHabit(name) {
-  saves.track(addDoc(habitsRef, { name: name, count: 0, createdAt: Date.now() }));
+  saves.track(addDoc(habitsCollection(), { name: name, count: 0, createdAt: Date.now() }));
 }
 
 // increment() runs on the server, so two devices tapping + at once both count
 function incrementHabit(id) {
-  saves.track(updateDoc(doc(db, "habits", id), { count: increment(1) }));
+  saves.track(updateDoc(habitDoc(id), { count: increment(1) }));
 }
 
 function resetHabit(id) {
-  saves.track(updateDoc(doc(db, "habits", id), { count: 0 }));
+  saves.track(updateDoc(habitDoc(id), { count: 0 }));
 }
 
 function deleteHabit(id) {
-  saves.track(deleteDoc(doc(db, "habits", id)));
+  saves.track(deleteDoc(habitDoc(id)));
 }
 
 /* ---------- one-time import of data saved in this browser ---------- */
@@ -112,7 +116,7 @@ importEl.addEventListener("click", async () => {
     const batch = writeBatch(db);
     const base = Date.now();
     legacy.habits.forEach((habit, index) => {
-      batch.set(doc(habitsRef), { name: habit.name, count: habit.count, createdAt: base + index });
+      batch.set(doc(habitsCollection()), { name: habit.name, count: habit.count, createdAt: base + index });
     });
     await batch.commit();
   } catch (err) {
@@ -189,11 +193,13 @@ formEl.addEventListener("submit", (event) => {
 });
 
 initGate({
-  onSignedIn() {
+  onSignedIn(user) {
+    userId = user.uid;
     offerImport();
     const unsubscribe = listen();
     return () => {
       unsubscribe();
+      userId = null;
       // drop the data from memory and screen when signing out
       habits = [];
       render();

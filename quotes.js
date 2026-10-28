@@ -1,7 +1,7 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, deleteDoc,
-} from "./firebase.js?v=17";
+} from "./firebase.js?v=18";
 
 const MAX_TEXT = 600;
 const MAX_AUTHOR = 100;
@@ -20,7 +20,9 @@ const countEl = document.getElementById("quote-count");
 const listEl = document.getElementById("quote-list");
 
 // one document per quote: { text, author, createdAt }
-const quotesRef = collection(db, "quotes");
+let userId = null;  // set when sign-in completes; everything lives under users/<id>/
+const quotesCollection = () => collection(db, "users", userId, "quotes");
+const quoteDoc = (id) => doc(db, "users", userId, "quotes", id);
 const saves = createSaveTracker(statusEl, showError);
 
 let quotes = [];        // oldest first, as stored
@@ -40,7 +42,7 @@ function isValidQuote(data) {
 /* ---------- database ---------- */
 
 function listen() {
-  const quotesQuery = query(quotesRef, orderBy("createdAt"));
+  const quotesQuery = query(quotesCollection(), orderBy("createdAt"));
   return onSnapshot(quotesQuery, (snapshot) => {
     quotes = [];
     for (const snap of snapshot.docs) {
@@ -57,11 +59,11 @@ function listen() {
 }
 
 function addQuote(text, author) {
-  saves.track(addDoc(quotesRef, { text: text, author: author, createdAt: Date.now() }));
+  saves.track(addDoc(quotesCollection(), { text: text, author: author, createdAt: Date.now() }));
 }
 
 function deleteQuote(id) {
-  saves.track(deleteDoc(doc(db, "quotes", id)));
+  saves.track(deleteDoc(quoteDoc(id)));
 }
 
 /* ---------- display ---------- */
@@ -160,10 +162,12 @@ formEl.addEventListener("submit", (event) => {
 });
 
 initGate({
-  onSignedIn() {
+  onSignedIn(user) {
+    userId = user.uid;
     const unsubscribe = listen();
     return () => {
       unsubscribe();
+      userId = null;
       // drop the data from memory and screen when signing out
       quotes = [];
       featuredId = null;
