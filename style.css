@@ -502,6 +502,100 @@ td input.invalid { background: var(--danger); color: #fff; }
 
 .chart-note { margin: 8px 0 0; font-size: 0.7rem; color: var(--muted); }
 
+/* ---------- quotes ---------- */
+
+/* An old-book serif: Baskerville ships with macOS and iOS; the rest are fallbacks */
+:root { --book: Baskerville, "Baskerville Old Face", "Libre Baskerville", Georgia, "Times New Roman", serif; }
+
+.featured {
+  width: calc(100% - 5px);
+  margin-bottom: 28px;
+  padding: 18px 18px 16px;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.featured-empty {
+  margin: 0;
+  font-family: var(--book);
+  font-style: italic;
+  font-size: 1.15rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* double rules above and below, like the ornaments of a printed page */
+.featured-quote {
+  margin: 0 0 16px;
+  padding: 14px 0;
+  border-top: 4px double var(--ink);
+  border-bottom: 4px double var(--ink);
+}
+.featured-quote::before {
+  content: "\201C";
+  display: block;
+  height: 38px;
+  font-family: var(--book);
+  font-size: 4.5rem;
+  line-height: 0.9;
+}
+
+.quote-text {
+  margin: 0 0 12px;
+  font-family: var(--book);
+  font-style: italic;
+  font-size: clamp(1.3rem, 5.4vw, 1.75rem);
+  line-height: 1.45;
+  /* keeps the line breaks you typed */
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.quote-text.small { margin-bottom: 6px; font-size: 1.15rem; }
+
+.quote-author {
+  margin: 0;
+  font-family: var(--book);
+  font-size: 1.05rem;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  text-align: right;
+}
+.featured-quote .quote-author::before { content: "\2014\00a0"; }
+.quote-body .quote-author { text-align: left; color: var(--muted); }
+.quote-body .quote-author::before { content: "\2014\00a0"; }
+
+#another { display: block; width: 100%; height: 56px; font-size: 1.05rem; }
+
+.quote-form { display: flex; flex-direction: column; gap: 12px; margin-top: 0; padding-right: 5px; }
+.form-label,
+.section-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.section-title { margin: 32px 0 14px; }
+.quote-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  /* iOS Safari zooms the page on focus if the font is under 16px */
+  font-size: 16px;
+  resize: vertical;
+}
+.quote-form textarea::placeholder { color: var(--muted); }
+.quote-form input { flex: none; width: 100%; text-transform: none; }
+.quote-form button.block { width: 100%; flex: none; }
+
+.quote-list li { align-items: flex-start; padding: 12px; }
+.quote-body { flex: 1; min-width: 0; }
+
 /* ---------- sign-in screen, import button, save status ---------- */
 
 .gate-text {
