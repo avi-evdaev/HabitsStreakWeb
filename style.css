@@ -82,8 +82,10 @@ main {
 .logo img { display: block; width: 44px; height: 44px; }
 .logo:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
 
-/* the way back to the home page: a plain arrow at the left end of the bar */
-.back-arrow {
+/* The way back to the home page: a plain arrow at the left end of the bar. The home page has an
+   empty slot of the same size, so the logo and title never move between pages. */
+.back-arrow,
+.back-slot {
   display: flex;
   flex: none;
   align-items: center;
@@ -96,7 +98,6 @@ main {
 }
 .back-arrow:hover { background: rgba(255, 255, 255, 0.14); }
 .back-arrow:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
-.bar.home .logo img { width: 72px; height: 72px; }
 
 .bar h1 {
   margin: 0;
@@ -104,10 +105,6 @@ main {
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-
-/* the logo's wordmark: heavy "PRO", light "ductive" */
-.bar h1.brand { font-size: 1.7rem; font-weight: 300; }
-.bar h1.brand .pro { font-weight: 700; }
 
 ul { list-style: none; margin: 0; padding: 0; }
 
