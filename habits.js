@@ -1,96 +1,139 @@
-"use strict";
+import {
+  db, initGate, createSaveTracker, describeFirestoreError,
+  collection, doc, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, increment, writeBatch,
+} from "./firebase.js";
 
-const STORAGE_KEY = "habitsStreak.habits";
+// Where this page kept its data before it moved to the database
+const LEGACY_KEY = "habitsStreak.habits";
 
 const listEl = document.getElementById("habit-list");
 const emptyEl = document.getElementById("empty");
 const errorEl = document.getElementById("error");
 const formEl = document.getElementById("add-form");
 const inputEl = document.getElementById("new-habit");
+const importEl = document.getElementById("import");
+const statusEl = document.getElementById("status");
 
-let habits = loadHabits();
-render();
+const habitsRef = collection(db, "habits");
+const saves = createSaveTracker(statusEl, showError);
 
-function showError(message) {
-  errorEl.textContent = message;
+let habits = [];
+
+function showError(err) {
+  errorEl.textContent = typeof err === "string" ? err : describeFirestoreError(err);
   errorEl.hidden = false;
 }
 
 function isValidHabit(item) {
   return item !== null && typeof item === "object" &&
-         typeof item.id === "string" &&
          typeof item.name === "string" &&
          Number.isInteger(item.count) && item.count >= 0;
 }
 
-function loadHabits() {
-  let raw;
-  try {
-    raw = localStorage.getItem(STORAGE_KEY);
-  } catch (err) {
-    // Happens in some private-browsing modes; the app still works, it just can't persist.
-    showError("Browser storage is unavailable. Habits will not be saved.");
-    return [];
-  }
-  if (raw === null) {
-    return [];
-  }
+/* ---------- database ---------- */
 
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || !parsed.every(isValidHabit)) {
-      throw new Error("unexpected data shape");
+function listen() {
+  // one document per habit; createdAt keeps the list in the order habits were added
+  const habitsQuery = query(habitsRef, orderBy("createdAt"));
+  return onSnapshot(habitsQuery, (snapshot) => {
+    habits = [];
+    for (const snap of snapshot.docs) {
+      const data = snap.data();
+      if (isValidHabit(data)) {
+        habits.push({ id: snap.id, name: data.name, count: data.count });
+      } else {
+        console.warn("Skipping malformed habit document", snap.id);
+      }
     }
-    return parsed;
-  } catch (err) {
-    // Keep the bad data under another key instead of overwriting it on the next save.
-    try {
-      localStorage.setItem(STORAGE_KEY + ".corrupt", raw);
-    } catch (backupErr) {
-      console.error("Could not back up corrupt data:", backupErr);
-    }
-    showError("Saved habits could not be read. The old data was kept under '" +
-              STORAGE_KEY + ".corrupt'.");
-    return [];
-  }
-}
-
-function saveHabits() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
-  } catch (err) {
-    showError("Could not save habits: " + err.message);
-  }
-}
-
-function newId() {
-  // crypto.randomUUID needs a secure context; this works everywhere, including file://.
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+    render();
+    saves.show();
+  }, showError);
 }
 
 function addHabit(name) {
-  habits.push({ id: newId(), name: name, count: 0 });
-  commit();
+  saves.track(addDoc(habitsRef, { name: name, count: 0, createdAt: Date.now() }));
 }
 
-function changeCount(id, update) {
-  const habit = habits.find((item) => item.id === id);
-  if (!habit) {
-    return;
-  }
-  habit.count = update(habit.count);
-  commit();
+// increment() runs on the server, so two devices tapping + at once both count
+function incrementHabit(id) {
+  saves.track(updateDoc(doc(db, "habits", id), { count: increment(1) }));
+}
+
+function resetHabit(id) {
+  saves.track(updateDoc(doc(db, "habits", id), { count: 0 }));
 }
 
 function deleteHabit(id) {
-  habits = habits.filter((item) => item.id !== id);
-  commit();
+  saves.track(deleteDoc(doc(db, "habits", id)));
 }
 
-function commit() {
-  saveHabits();
-  render();
+/* ---------- one-time import of data saved in this browser ---------- */
+
+function readLegacyHabits() {
+  let raw;
+  try {
+    raw = localStorage.getItem(LEGACY_KEY);
+  } catch (err) {
+    return null;
+  }
+  if (raw === null) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    const valid = Array.isArray(parsed) ? parsed.filter(isValidHabit) : [];
+    return valid.length > 0 ? { raw: raw, habits: valid } : null;
+  } catch (err) {
+    console.error("Old local habits could not be read:", err);
+    return null;
+  }
 }
+
+function offerImport() {
+  const legacy = readLegacyHabits();
+  if (legacy === null) {
+    importEl.hidden = true;
+    return;
+  }
+  const count = legacy.habits.length;
+  importEl.textContent = "Import " + count + " habit" + (count === 1 ? "" : "s") + " from this device";
+  importEl.hidden = false;
+}
+
+importEl.addEventListener("click", async () => {
+  const legacy = readLegacyHabits();
+  if (legacy === null) {
+    importEl.hidden = true;
+    return;
+  }
+
+  importEl.disabled = true;
+  try {
+    const batch = writeBatch(db);
+    const base = Date.now();
+    legacy.habits.forEach((habit, index) => {
+      batch.set(doc(habitsRef), { name: habit.name, count: habit.count, createdAt: base + index });
+    });
+    await batch.commit();
+  } catch (err) {
+    showError(err);
+    importEl.disabled = false;
+    return;
+  }
+
+  importEl.hidden = true;
+  importEl.disabled = false;
+  // Keep a copy under another key instead of deleting, and remove the original so the same
+  // data can't be imported twice.
+  try {
+    localStorage.setItem(LEGACY_KEY + ".imported", legacy.raw);
+    localStorage.removeItem(LEGACY_KEY);
+  } catch (err) {
+    showError("Imported, but the old copy on this device could not be cleared: " + err.message);
+  }
+});
+
+/* ---------- display ---------- */
 
 function makeButton(className, label, text, onClick) {
   const button = document.createElement("button");
@@ -120,17 +163,14 @@ function render() {
     row.append(
       name,
       count,
-      makeButton("inc", "Increment " + habit.name, "+",
-                 () => changeCount(habit.id, (value) => value + 1)),
-      makeButton("reset", "Reset " + habit.name, "↺",
-                 () => changeCount(habit.id, () => 0)),
+      makeButton("inc", "Increment " + habit.name, "+", () => incrementHabit(habit.id)),
+      makeButton("reset", "Reset " + habit.name, "↺", () => resetHabit(habit.id)),
       // No swipe-to-delete in a browser, so deleting gets an explicit button.
-      makeButton("del", "Delete " + habit.name, "×",
-                 () => {
-                   if (confirm("Delete \"" + habit.name + "\"?")) {
-                     deleteHabit(habit.id);
-                   }
-                 })
+      makeButton("del", "Delete " + habit.name, "×", () => {
+        if (confirm("Delete \"" + habit.name + "\"?")) {
+          deleteHabit(habit.id);
+        }
+      })
     );
     listEl.append(row);
   }
@@ -146,4 +186,17 @@ formEl.addEventListener("submit", (event) => {
   }
   addHabit(name);
   inputEl.value = "";
+});
+
+initGate({
+  onSignedIn() {
+    offerImport();
+    const unsubscribe = listen();
+    return () => {
+      unsubscribe();
+      // drop the data from memory and screen when signing out
+      habits = [];
+      render();
+    };
+  },
 });

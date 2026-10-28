@@ -1,6 +1,10 @@
-"use strict";
+import {
+  db, initGate, createSaveTracker, describeFirestoreError,
+  collection, doc, onSnapshot, setDoc, writeBatch,
+} from "./firebase.js";
 
-const STORAGE_KEY = "nutrition.log";
+// Where this page kept its data before it moved to the database
+const LEGACY_KEY = "nutrition.log";
 // First tracked day. The year only keys the stored data; the table shows just day and month.
 const START = { year: 2026, month: 10, day: 28 };
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -8,90 +12,144 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 const FIELDS = ["calories", "protein"];
 const MAX_AMOUNT = { calories: 20000, protein: 1000 };
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+// Typing saves after this pause, so one entry like "2150" is one write, not four.
+const SAVE_DELAY_MS = 700;
+const IMPORT_CHUNK = 400;
 
 const wrapEl = document.getElementById("table-wrap");
 const rowsEl = document.getElementById("rows");
 const errorEl = document.getElementById("error");
+const importEl = document.getElementById("import");
+const statusEl = document.getElementById("status");
 const avgCaloriesEl = document.getElementById("avg-calories");
 const avgProteinEl = document.getElementById("avg-protein");
 const daysLoggedEl = document.getElementById("days-logged");
 
-let log = loadLog();
+// one document per day, named by its date key; fields: calories, protein (number or null)
+const nutritionRef = collection(db, "nutrition");
+const saves = createSaveTracker(statusEl, showError);
+
+let log = {};              // what the database last told us (plus our own sent edits)
+const drafts = new Map();  // typed but not yet sent, keyed "date|field"
 let shownKeys = [];
 let renderedToday = null;
 
-/* ---------- storage ---------- */
-
-function showError(message) {
-  errorEl.textContent = message;
+function showError(err) {
+  errorEl.textContent = typeof err === "string" ? err : describeFirestoreError(err);
   errorEl.hidden = false;
 }
+
+/* ---------- data ---------- */
 
 function isValidAmount(field, value) {
   return Number.isInteger(value) && value >= 0 && value <= MAX_AMOUNT[field];
 }
 
-function isValidEntry(entry) {
-  return entry !== null && typeof entry === "object" &&
-         FIELDS.every((field) => entry[field] === null || isValidAmount(field, entry[field]));
-}
-
-function loadLog() {
-  let raw;
-  try {
-    raw = localStorage.getItem(STORAGE_KEY);
-  } catch (err) {
-    // Happens in some private-browsing modes; the page still works, it just can't persist.
-    showError("Browser storage is unavailable. Entries will not be saved.");
-    return {};
-  }
-  if (raw === null) {
-    return {};
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    const isPlainObject = parsed !== null && typeof parsed === "object" && !Array.isArray(parsed);
-    if (!isPlainObject ||
-        !Object.entries(parsed).every(([key, entry]) => DATE_KEY_PATTERN.test(key) && isValidEntry(entry))) {
-      throw new Error("unexpected data shape");
+// Turns a stored document into { calories, protein }, or null if any field is invalid.
+// A missing field means "not logged", so a partly filled day is fine.
+function toEntry(data) {
+  const entry = { calories: null, protein: null };
+  for (const field of FIELDS) {
+    const value = data[field];
+    if (value === undefined || value === null) {
+      continue;
     }
-    return parsed;
-  } catch (err) {
-    // Keep the bad data under another key instead of overwriting it on the next save.
-    try {
-      localStorage.setItem(STORAGE_KEY + ".corrupt", raw);
-    } catch (backupErr) {
-      console.error("Could not back up corrupt data:", backupErr);
+    if (!isValidAmount(field, value)) {
+      return null;
     }
-    showError("Saved entries could not be read. The old data was kept under '" +
-              STORAGE_KEY + ".corrupt'.");
-    return {};
+    entry[field] = value;
   }
+  return entry;
 }
 
-function saveLog() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(log));
-  } catch (err) {
-    showError("Could not save entries: " + err.message);
-  }
+function draftId(key, field) {
+  return key + "|" + field;
 }
 
-function setAmount(key, field, value) {
-  const entry = log[key] || { calories: null, protein: null };
-  entry[field] = value;
-  if (entry.calories === null && entry.protein === null) {
-    delete log[key];
-  } else {
-    log[key] = entry;
-  }
-  saveLog();
-}
-
-function storedAmount(key, field) {
+function savedAmount(key, field) {
   const entry = log[key];
-  return entry && entry[field] !== null ? entry[field] : null;
+  return entry ? entry[field] : null;
+}
+
+// What the person sees: an unsent edit wins over saved data.
+function amountOf(key, field) {
+  const draft = drafts.get(draftId(key, field));
+  return draft ? draft.value : savedAmount(key, field);
+}
+
+function applySnapshot(snapshot) {
+  const next = {};
+  for (const snap of snapshot.docs) {
+    const entry = DATE_KEY_PATTERN.test(snap.id) ? toEntry(snap.data()) : null;
+    if (entry !== null) {
+      next[snap.id] = entry;
+    } else {
+      console.warn("Skipping malformed nutrition document", snap.id);
+    }
+  }
+  log = next;
+  syncInputs();
+  renderStats();
+  saves.show();
+}
+
+// Updates the fields from the data without rebuilding the table, and never touches the field
+// being typed in, so a change from another device can't make the cursor jump.
+function syncInputs() {
+  for (const input of rowsEl.querySelectorAll("input")) {
+    const key = input.closest("tr").dataset.key;
+    const field = input.dataset.field;
+    if (input === document.activeElement || drafts.has(draftId(key, field))) {
+      continue;
+    }
+    const amount = amountOf(key, field);
+    input.value = amount === null ? "" : amount;
+  }
+}
+
+function sendDraft(id) {
+  const draft = drafts.get(id);
+  if (draft === undefined) {
+    return;
+  }
+  clearTimeout(draft.timer);
+  drafts.delete(id);
+
+  // Update our copy first so the stats and the field don't flash the old value while the
+  // database round-trips.
+  const entry = log[draft.key] || { calories: null, protein: null };
+  entry[draft.field] = draft.value;
+  log[draft.key] = entry;
+
+  // Write only the changed field (merge), so editing calories can never wipe protein that
+  // another device just saved.
+  saves.track(setDoc(doc(db, "nutrition", draft.key), { [draft.field]: draft.value }, { merge: true }));
+}
+
+function queueSave(key, field, value, immediately) {
+  const id = draftId(key, field);
+  const existing = drafts.get(id);
+  if (existing !== undefined) {
+    clearTimeout(existing.timer);
+    drafts.delete(id);
+  }
+  if (value === savedAmount(key, field)) {
+    return;  // back to what is already saved, nothing to send
+  }
+
+  const draft = { key: key, field: field, value: value, timer: null };
+  drafts.set(id, draft);
+  if (immediately) {
+    sendDraft(id);
+  } else {
+    draft.timer = setTimeout(() => sendDraft(id), SAVE_DELAY_MS);
+  }
+}
+
+function flushDrafts() {
+  for (const id of [...drafts.keys()]) {
+    sendDraft(id);
+  }
 }
 
 /* ---------- dates ---------- */
@@ -143,8 +201,8 @@ function makeAmountCell(key, label, field) {
   input.placeholder = "—";
   input.dataset.field = field;
   input.setAttribute("aria-label", field + " for " + label);
-  const stored = storedAmount(key, field);
-  input.value = stored === null ? "" : stored;
+  const amount = amountOf(key, field);
+  input.value = amount === null ? "" : amount;
   cell.append(input);
   return cell;
 }
@@ -192,7 +250,7 @@ function renderStats() {
   for (const key of shownKeys) {
     let loggedSomething = false;
     for (const field of FIELDS) {
-      const amount = storedAmount(key, field);
+      const amount = amountOf(key, field);
       if (amount !== null) {
         sums[field] += amount;
         counts[field] += 1;
@@ -214,13 +272,13 @@ function renderStats() {
 /* ---------- editing ---------- */
 
 function restoreInput(input, key, field) {
-  const stored = storedAmount(key, field);
-  input.value = stored === null ? "" : stored;
+  const amount = amountOf(key, field);
+  input.value = amount === null ? "" : amount;
   input.classList.remove("invalid");
 }
 
-// Saves while typing so nothing is lost if the phone locks mid-entry. "finished" is the
-// change event (field left), where junk is replaced by the last saved value.
+// Called while typing (finished = false) and when the field is left (finished = true), where
+// junk is replaced by the last good value.
 function handleEdit(input, finished) {
   if (!(input instanceof HTMLInputElement)) {
     return;
@@ -240,7 +298,7 @@ function handleEdit(input, finished) {
   }
 
   input.classList.remove("invalid");
-  setAmount(key, field, text === "" ? null : Number(text));
+  queueSave(key, field, text === "" ? null : Number(text), finished);
   if (finished) {
     restoreInput(input, key, field);
   }
@@ -250,11 +308,123 @@ function handleEdit(input, finished) {
 rowsEl.addEventListener("input", (event) => handleEdit(event.target, false));
 rowsEl.addEventListener("change", (event) => handleEdit(event.target, true));
 
-// If the page stays open past midnight, the new day's row appears when you come back to it.
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && todayKey() !== renderedToday) {
+  if (document.visibilityState === "hidden") {
+    // send anything still waiting for its typing pause before the phone locks or the tab closes
+    flushDrafts();
+  } else if (renderedToday !== null && todayKey() !== renderedToday) {
+    // the page stayed open past midnight: add the new day's row
     renderTable();
   }
 });
+window.addEventListener("pagehide", flushDrafts);
 
-renderTable();
+/* ---------- one-time import of data saved in this browser ---------- */
+
+function readLegacyEntries() {
+  let raw;
+  try {
+    raw = localStorage.getItem(LEGACY_KEY);
+  } catch (err) {
+    return null;
+  }
+  if (raw === null) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    const isPlainObject = parsed !== null && typeof parsed === "object" && !Array.isArray(parsed);
+    if (!isPlainObject) {
+      return null;
+    }
+    const entries = [];
+    for (const [key, value] of Object.entries(parsed)) {
+      const entry = DATE_KEY_PATTERN.test(key) && value !== null && typeof value === "object"
+        ? toEntry(value) : null;
+      if (entry === null) {
+        continue;
+      }
+      // only fields that have a value, so a blank local cell can never erase saved data
+      const data = {};
+      for (const field of FIELDS) {
+        if (entry[field] !== null) {
+          data[field] = entry[field];
+        }
+      }
+      if (Object.keys(data).length > 0) {
+        entries.push([key, data]);
+      }
+    }
+    return entries.length > 0 ? { raw: raw, entries: entries } : null;
+  } catch (err) {
+    console.error("Old local entries could not be read:", err);
+    return null;
+  }
+}
+
+function offerImport() {
+  const legacy = readLegacyEntries();
+  if (legacy === null) {
+    importEl.hidden = true;
+    return;
+  }
+  const count = legacy.entries.length;
+  importEl.textContent = "Import " + count + " day" + (count === 1 ? "" : "s") + " from this device";
+  importEl.hidden = false;
+}
+
+importEl.addEventListener("click", async () => {
+  const legacy = readLegacyEntries();
+  if (legacy === null) {
+    importEl.hidden = true;
+    return;
+  }
+
+  importEl.disabled = true;
+  try {
+    for (let start = 0; start < legacy.entries.length; start += IMPORT_CHUNK) {
+      const batch = writeBatch(db);
+      for (const [key, data] of legacy.entries.slice(start, start + IMPORT_CHUNK)) {
+        batch.set(doc(db, "nutrition", key), data, { merge: true });
+      }
+      await batch.commit();
+    }
+  } catch (err) {
+    showError(err);
+    importEl.disabled = false;
+    return;
+  }
+
+  importEl.hidden = true;
+  importEl.disabled = false;
+  // Keep a copy under another key instead of deleting, and remove the original so the same
+  // data can't be imported twice.
+  try {
+    localStorage.setItem(LEGACY_KEY + ".imported", legacy.raw);
+    localStorage.removeItem(LEGACY_KEY);
+  } catch (err) {
+    showError("Imported, but the old copy on this device could not be cleared: " + err.message);
+  }
+});
+
+/* ---------- start ---------- */
+
+initGate({
+  onSignedIn() {
+    renderTable();
+    offerImport();
+    const unsubscribe = onSnapshot(nutritionRef, applySnapshot, showError);
+    return () => {
+      unsubscribe();
+      // drop the data from memory and screen when signing out
+      for (const draft of drafts.values()) {
+        clearTimeout(draft.timer);
+      }
+      drafts.clear();
+      log = {};
+      shownKeys = [];
+      renderedToday = null;
+      rowsEl.replaceChildren();
+    };
+  },
+});

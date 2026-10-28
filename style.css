@@ -407,6 +407,59 @@ td input.invalid { background: var(--danger); color: #fff; }
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- sign-in screen, import button, save status ---------- */
+
+.gate-text {
+  margin: 0 0 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gate button.block {
+  display: block;
+  width: calc(100% - 5px);
+  height: 80px;
+  font-size: 1.1rem;
+}
+.gate .error { margin-top: 18px; }
+
+#import {
+  display: block;
+  width: calc(100% - 5px);
+  height: 64px;
+  margin-bottom: 18px;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+}
+
+.session {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+button.small {
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+button.small:hover { background: var(--ink); color: var(--bg); }
+
 #build {
   margin-top: 36px;
   font-size: 0.75rem;

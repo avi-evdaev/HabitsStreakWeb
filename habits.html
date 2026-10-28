@@ -15,21 +15,39 @@
     <a class="back" href="./">&larr; Home</a>
     <h1>Habits Streak</h1>
 
-    <p id="error" class="error" role="alert" hidden></p>
+    <!-- shown until Firebase reports whether someone is signed in, so the page is never blank -->
+    <p id="checking" class="gate-text">Checking sign-in&hellip;</p>
 
-    <ul id="habit-list"></ul>
-    <p id="empty" class="empty" hidden>No habits yet.</p>
+    <section id="gate" class="gate" hidden>
+      <p class="gate-text">Sign in to see your habits.</p>
+      <button id="sign-in" type="button" class="block primary">Sign in with Google</button>
+      <p id="gate-message" class="error" role="alert" hidden></p>
+    </section>
 
-    <form id="add-form">
-      <input id="new-habit" type="text" placeholder="New habit" maxlength="100"
-             autocomplete="off" aria-label="New habit name">
-      <button type="submit" class="icon add" aria-label="Add habit">+</button>
-    </form>
+    <div id="content" hidden>
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <button id="import" type="button" class="block primary" hidden></button>
+
+      <ul id="habit-list"></ul>
+      <p id="empty" class="empty" hidden>No habits yet.</p>
+
+      <form id="add-form">
+        <input id="new-habit" type="text" placeholder="New habit" maxlength="100"
+               autocomplete="off" aria-label="New habit name">
+        <button type="submit" class="icon add" aria-label="Add habit">+</button>
+      </form>
+
+      <div class="session">
+        <span id="status">Loading&hellip;</span>
+        <button id="sign-out" type="button" class="small">Sign out</button>
+      </div>
+    </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 8 &middot; 2026-10-28 23:36</footer>
+    <footer id="build">Build 9 &middot; 2026-10-29 00:04</footer>
   </main>
 
-  <script src="habits.js"></script>
+  <script type="module" src="habits.js"></script>
 </body>
 </html>

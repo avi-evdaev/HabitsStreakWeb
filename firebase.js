@@ -1,0 +1,128 @@
+// Firebase Web SDK loaded from Google's CDN as ES modules, pinned to one version, because the
+// site is plain static files with no build step. To upgrade, change the version in every URL
+// below (import specifiers must be literal strings, so it can't live in a variable).
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut,
+} from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+
+export {
+  collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
+  increment, writeBatch,
+} from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+
+// These values are not secrets: they only say which project to talk to. Who may read or write
+// is enforced by the Firestore Security Rules on Google's servers.
+const firebaseConfig = {
+  apiKey: "AIzaSyDvmvLKXsBplo20LDwkWyrJENYHxlmwyTM",
+  authDomain: "productive-752f2.firebaseapp.com",
+  projectId: "productive-752f2",
+  storageBucket: "productive-752f2.firebasestorage.app",
+  messagingSenderId: "939985773989",
+  appId: "1:939985773989:web:5601de79f6964efe7b744c",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+export const db = getFirestore(app);
+
+export function describeFirestoreError(err) {
+  if (err && err.code === "permission-denied") {
+    return "This Google account is not allowed to use this app.";
+  }
+  if (err && err.code === "unavailable") {
+    return "Cannot reach the database. Check your connection.";
+  }
+  return err && err.message ? err.message : String(err);
+}
+
+function describeAuthError(err) {
+  switch (err && err.code) {
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+      return "Sign-in was cancelled.";
+    case "auth/popup-blocked":
+      return "The sign-in popup was blocked. Allow popups for this site and tap again.";
+    case "auth/unauthorized-domain":
+      return "This site's domain is not authorized in Firebase " +
+             "(Authentication > Settings > Authorized domains).";
+    default:
+      return err && err.message ? err.message : String(err);
+  }
+}
+
+// Shows either the sign-in screen or the page content, and runs onSignedIn(user) whenever a
+// user is signed in. onSignedIn may return a cleanup function; it runs on sign-out so the page
+// stops listening to the database and drops the data it was holding.
+export function initGate({ onSignedIn }) {
+  const gateEl = document.getElementById("gate");
+  const contentEl = document.getElementById("content");
+  const signInEl = document.getElementById("sign-in");
+  const signOutEl = document.getElementById("sign-out");
+  const messageEl = document.getElementById("gate-message");
+  const checkingEl = document.getElementById("checking");
+  let cleanup = null;
+
+  function showMessage(text) {
+    messageEl.textContent = text;
+    messageEl.hidden = text === "";
+  }
+
+  // signInWithPopup (not redirect): the auth domain differs from this site's domain, and Safari
+  // blocks the cross-site storage that the redirect flow relies on. It must run inside the tap.
+  signInEl.addEventListener("click", async () => {
+    showMessage("");
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch (err) {
+      showMessage(describeAuthError(err));
+    }
+  });
+
+  signOutEl.addEventListener("click", () => {
+    signOut(auth).catch((err) => showMessage(describeAuthError(err)));
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (cleanup !== null) {
+      cleanup();
+      cleanup = null;
+    }
+    checkingEl.hidden = true;
+    gateEl.hidden = user !== null;
+    contentEl.hidden = user === null;
+    if (user !== null) {
+      cleanup = onSignedIn(user) || null;
+    }
+  });
+}
+
+// Shows "Saving..." while writes are in flight and "Saved" once the server has confirmed them.
+// Offline, the SDK keeps the writes queued, so the label says so instead of claiming success.
+export function createSaveTracker(statusEl, onError) {
+  let pending = 0;
+
+  function show() {
+    if (!navigator.onLine) {
+      statusEl.textContent = "Offline: changes sync when you reconnect";
+    } else {
+      statusEl.textContent = pending > 0 ? "Saving…" : "Saved";
+    }
+  }
+
+  window.addEventListener("online", show);
+  window.addEventListener("offline", show);
+
+  return {
+    show,
+    track(promise) {
+      pending += 1;
+      show();
+      promise.then(
+        () => { pending -= 1; show(); },
+        (err) => { pending -= 1; show(); onError(err); },
+      );
+    },
+  };
+}
