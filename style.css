@@ -225,6 +225,15 @@ input::placeholder { color: #b39386; }
   color: #fff;
 }
 
+#build {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 [hidden] { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
