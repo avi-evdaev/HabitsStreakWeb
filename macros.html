@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover + the meta below make it look right when added to the iPhone home screen -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#000000">
+  <title>Macros Guide</title>
+  <!-- start downloading the Firebase files at once instead of one step after another -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <link rel="modulepreload" href="firebase.js?v=33">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js">
+  <link rel="modulepreload" href="macros.js?v=33">
+  <link rel="icon" type="image/png" href="favicon.png?v=33">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=33">
+  <link rel="stylesheet" href="style.css?v=33">
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="back-arrow" href="./" aria-label="Back to home"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg></a>
+      <a class="logo" href="./"><img src="logo.png?v=33" alt="PROductive home" width="44" height="44"></a>
+      <h1>Macros Guide</h1>
+    </div>
+  </header>
+  <main>
+
+    <!-- shown until Firebase reports whether someone is signed in, so the page is never blank -->
+    <p id="checking" class="gate-text">Checking sign-in&hellip;</p>
+
+    <section id="gate" class="gate" hidden>
+      <p class="gate-text">Sign in to see your foods.</p>
+      <button id="sign-in" type="button" class="block primary">Sign in with Google</button>
+      <p id="gate-message" class="error" role="alert" hidden></p>
+    </section>
+
+    <div id="content" hidden>
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <div class="toolbar">
+        <input id="search" type="search" dir="auto" placeholder="Search foods" aria-label="Search foods"
+               autocomplete="off">
+        <button id="add-food" type="button" class="block primary">Add food</button>
+      </div>
+
+      <div id="table-wrap" class="table-wrap" hidden>
+        <table class="macros">
+          <thead>
+            <tr>
+              <th scope="col" class="food">Food</th>
+              <th scope="col" class="per">Per</th>
+              <th scope="col" class="num">Cal</th>
+              <th scope="col" class="num">Protein</th>
+              <th scope="col" class="act"><span class="sr-only">Delete</span></th>
+            </tr>
+          </thead>
+          <tbody id="foods"></tbody>
+        </table>
+      </div>
+      <p id="foods-empty" class="empty" hidden>No foods yet. Tap Add food to start your guide.</p>
+      <p id="no-match" class="empty" hidden>No food matches your search.</p>
+      <p class="chart-note">Calories and protein are for the amount in the Per column, for example
+        100 g or 1 egg. Food names can be in Hebrew. Tap any cell to edit it.</p>
+
+      <dialog id="food-dialog" class="dialog" aria-labelledby="food-title">
+        <form id="food-form" class="dialog-form">
+          <h2 id="food-title" class="dialog-title">Add food</h2>
+          <p class="dialog-note">Calories and protein for the amount you write under Per.</p>
+          <label for="food-name" class="form-label">Food</label>
+          <input id="food-name" type="text" dir="auto" maxlength="80" autocomplete="off" autofocus>
+          <label for="food-per" class="form-label">Per</label>
+          <input id="food-per" type="text" dir="auto" maxlength="30" autocomplete="off" value="100 g">
+          <label for="food-calories" class="form-label">Calories</label>
+          <input id="food-calories" type="number" inputmode="numeric" min="0" max="5000" step="1" placeholder="0">
+          <label for="food-protein" class="form-label">Protein (g)</label>
+          <input id="food-protein" type="number" inputmode="decimal" min="0" max="500" step="0.1" placeholder="0">
+          <p id="food-error" class="error" role="alert" hidden></p>
+          <div class="dialog-actions">
+            <button type="button" id="food-cancel" class="block">Cancel</button>
+            <button type="submit" class="block primary">Add</button>
+          </div>
+        </form>
+      </dialog>
+
+      <div class="session">
+        <span id="status">Loading&hellip;</span>
+        <button id="sign-out" type="button" class="small">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
+    <footer id="build">Build 33 &middot; 2026-10-29 16:50</footer>
+  </main>
+
+  <script type="module" src="macros.js?v=33"></script>
+</body>
+</html>

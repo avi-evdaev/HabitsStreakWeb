@@ -2,7 +2,7 @@ import {
   db, initGate, describeFirestoreError,
   collection, doc, query, limit, getDoc, getDocs, getDocFromCache, getDocsFromCache, setDoc,
   writeBatch,
-} from "./firebase.js?v=31";
+} from "./firebase.js?v=33";
 
 // Before accounts existed, data lived in these shared collections. It now lives under
 // users/<id>/<name>, and this page offers a one-time copy of the old data into the account.

@@ -2,7 +2,7 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=32";
+} from "./firebase.js?v=33";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
@@ -376,6 +376,7 @@ function render() {
     // textContent, not innerHTML: habit names are user input and must not be parsed as HTML.
     const name = document.createElement("span");
     name.className = "name";
+    name.dir = "auto";  // a Hebrew habit name reads right-to-left
     name.textContent = habit.name;
 
     row.style.backgroundColor = heatColor(habit.count);

@@ -1,7 +1,7 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, deleteDoc,
-} from "./firebase.js?v=31";
+} from "./firebase.js?v=33";
 
 const MAX_TEXT = 600;
 const MAX_AUTHOR = 100;
@@ -107,11 +107,13 @@ function renderList() {
     body.className = "quote-body";
     const text = document.createElement("p");
     text.className = "quote-text small";
+    text.dir = "auto";  // Hebrew quotes read right-to-left
     text.textContent = quote.text;
     body.append(text);
     if (quote.author !== "") {
       const author = document.createElement("p");
       author.className = "quote-author";
+      author.dir = "auto";
       author.textContent = quote.author;
       body.append(author);
     }
