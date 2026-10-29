@@ -60,6 +60,8 @@
   border-radius: 0;
   -webkit-appearance: none;
   appearance: none;
+  /* no double-tap-to-zoom on iPhone; scrolling and pinch-zoom still work */
+  touch-action: manipulation;
 }
 
 body {

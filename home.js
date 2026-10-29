@@ -1,7 +1,8 @@
 import {
   db, initGate, describeFirestoreError,
-  collection, doc, query, limit, getDoc, getDocs, setDoc, writeBatch,
-} from "./firebase.js?v=26";
+  collection, doc, query, limit, getDoc, getDocs, getDocFromCache, getDocsFromCache, setDoc,
+  writeBatch,
+} from "./firebase.js?v=27";
 
 // Before accounts existed, data lived in these shared collections. It now lives under
 // users/<id>/<name>, and this page offers a one-time copy of the old data into the account.
@@ -25,16 +26,42 @@ function showError(err) {
 
 const migrationDoc = () => doc(db, "users", userId, "meta", "migration");
 
+// The local copy answers instantly. Only when nothing is stored yet (a first visit on this
+// device) is the server asked, and the answer is then kept for next time.
+async function isMarkedDone() {
+  try {
+    if ((await getDocFromCache(migrationDoc())).exists()) {
+      return true;
+    }
+  } catch (err) {
+    // not stored locally yet
+  }
+  return (await getDoc(migrationDoc())).exists();
+}
+
+async function readQuotes(id) {
+  const quotesRef = collection(db, "users", id, "quotes");
+  try {
+    const cached = await getDocsFromCache(quotesRef);
+    if (!cached.empty) {
+      return cached;
+    }
+  } catch (err) {
+    // no local copy yet
+  }
+  return getDocs(quotesRef);
+}
+
 function isValidQuote(data) {
   return data !== null && typeof data === "object" &&
          typeof data.text === "string" && data.text.trim() !== "" &&
          (data.author === undefined || typeof data.author === "string");
 }
 
-// Reads the account's quotes once and shows one at random. Costs one database read per quote
-// per page load, which stays far below the free daily limit for a personal collection.
+// Shows one of the account's quotes at random, picked again on every page load. It reads the
+// local copy when there is one, so it is instant and costs no database reads.
 async function showRandomQuote(id) {
-  const snapshot = await getDocs(collection(db, "users", id, "quotes"));
+  const snapshot = await readQuotes(id);
   const quotes = snapshot.docs.map((snap) => snap.data()).filter(isValidQuote);
   // nothing to show, or the person signed out while the request was running
   if (quotes.length === 0 || id !== userId) {
@@ -51,8 +78,7 @@ async function showRandomQuote(id) {
 // Looks once per account. The flag document records that the question was settled, so later
 // visits cost a single read instead of scanning the old collections.
 async function offerMove(id) {
-  const flag = await getDoc(migrationDoc());
-  if (flag.exists()) {
+  if (await isMarkedDone()) {
     return;
   }
 

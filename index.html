@@ -8,15 +8,28 @@
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <title>PROductive</title>
-  <link rel="icon" type="image/png" href="favicon.png?v=26">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=26">
-  <link rel="stylesheet" href="style.css?v=26">
+  <!-- start downloading the Firebase files at once instead of one step after another -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <link rel="modulepreload" href="firebase.js?v=27">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js">
+  <link rel="modulepreload" href="home.js?v=27">
+  <!-- Chrome only: starts loading a page in the background when you hover or press its button -->
+  <script type="speculationrules">
+  {"prerender": [{"source": "list", "urls": ["habits.html", "nutrition.html", "quotes.html"],
+                  "eagerness": "moderate"}]}
+  </script>
+  <link rel="icon" type="image/png" href="favicon.png?v=27">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
+  <link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
   <header class="bar">
     <div class="bar-inner">
       <span class="back-slot" aria-hidden="true"></span>
-      <a class="logo" href="./"><img src="logo.png?v=26" alt="PROductive logo" width="44" height="44"></a>
+      <a class="logo" href="./"><img src="logo.png?v=27" alt="PROductive logo" width="44" height="44"></a>
       <h1>PROductive</h1>
     </div>
   </header>
@@ -70,9 +83,9 @@
     </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 26 &middot; 2026-10-29 12:34</footer>
+    <footer id="build">Build 27 &middot; 2026-10-29 13:06</footer>
   </main>
 
-  <script type="module" src="home.js?v=26"></script>
+  <script type="module" src="home.js?v=27"></script>
 </body>
 </html>

@@ -5,10 +5,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebas
 import {
   getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut,
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+import {
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore,
+  terminate, clearIndexedDbPersistence,
+} from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
 export {
-  collection, doc, query, orderBy, limit, onSnapshot, getDoc, getDocs, addDoc, setDoc, updateDoc,
+  collection, doc, query, orderBy, limit, onSnapshot, getDoc, getDocs, getDocFromCache, getDocsFromCache, addDoc, setDoc, updateDoc,
   deleteDoc, increment, writeBatch,
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
@@ -25,7 +28,21 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-export const db = getFirestore(app);
+// Keeps a copy of your data in this browser (IndexedDB). Pages draw from that copy at once and
+// update from the server a moment later, instead of waiting for the network every time.
+// Several tabs can share it. Where the browser refuses (some private modes), fall back to the
+// plain in-memory database.
+function openDatabase() {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
+  } catch (err) {
+    console.warn("Offline copy unavailable, using memory only:", err);
+    return getFirestore(app);
+  }
+}
+export const db = openDatabase();
 
 export function describeFirestoreError(err) {
   if (err && err.code === "permission-denied") {
@@ -82,8 +99,23 @@ export function initGate({ onSignedIn }) {
     }
   });
 
-  signOutEl.addEventListener("click", () => {
-    signOut(auth).catch((err) => showMessage(describeAuthError(err)));
+  signOutEl.addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      showMessage(describeAuthError(err));
+      return;
+    }
+    // The offline copy of your data lives in this browser. Wipe it on sign-out so a shared
+    // computer keeps nothing. If another tab still has the database open the wipe is
+    // refused; the page reloads either way and shows the sign-in screen.
+    try {
+      await terminate(db);
+      await clearIndexedDbPersistence(db);
+    } catch (err) {
+      console.warn("Could not clear the offline copy:", err);
+    }
+    location.reload();
   });
 
   onAuthStateChanged(auth, (user) => {
