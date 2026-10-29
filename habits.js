@@ -1,13 +1,51 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
-  collection, doc, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, increment, writeBatch,
-} from "./firebase.js?v=30";
+  collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
+  writeBatch,
+} from "./firebase.js?v=31";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
-// The built-in protein habit counts days at or above this many grams (from the Nutrition page).
-const PROTEIN_TARGET = 140;
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// A habit row heats up with its count: grey at 0, a little redder with each one, full red at
+// HEAT_FULL_AT and beyond. The cool end is the normal row grey, so a habit at 0 looks unchanged.
+const HEAT_FULL_AT = 10;
+const COOL_RGB = [28, 28, 30];
+const HOT_RGB = [209, 17, 27];
+
+// Built-in habits. Their numbers are not typed in: each one counts the finished days on the
+// Nutrition page whose logged value passes a test against a number the person sets for themselves.
+// Everyone starts at the fallback and can change their own (kept in the account's settings).
+const AUTO_HABITS = [
+  {
+    field: "protein",
+    setting: "proteinTarget",
+    fallback: 140,
+    max: 1000,
+    title: (value) => "Protein " + value + " g",
+    note: () => "Automatic, from Nutrition, up to yesterday",
+    passes: (logged, value) => logged >= value,
+    changeLabel: "Change the protein target",
+    dialogTitle: "Protein target",
+    dialogNote: "Days at or above this many grams count, up to yesterday.",
+    dialogLabel: "Grams per day",
+  },
+  {
+    field: "calories",
+    setting: "calorieLimit",
+    fallback: 2000,
+    max: 20000,
+    title: () => "Calorie deficit",
+    note: (value) => "At or under " + value + " kcal. Automatic, up to yesterday",
+    // a logged 0 is treated as "nothing logged", so an empty day is never counted as a deficit
+    passes: (logged, value) => logged > 0 && logged <= value,
+    changeLabel: "Change the calorie limit",
+    dialogTitle: "Calorie limit",
+    dialogNote: "Days at or under this many calories count as a deficit, up to yesterday.",
+    dialogLabel: "Calories per day",
+  },
+];
 
 const listEl = document.getElementById("habit-list");
 const emptyEl = document.getElementById("empty");
@@ -16,6 +54,14 @@ const formEl = document.getElementById("add-form");
 const inputEl = document.getElementById("new-habit");
 const importEl = document.getElementById("import");
 const statusEl = document.getElementById("status");
+const targetDialogEl = document.getElementById("target-dialog");
+const targetFormEl = document.getElementById("target-form");
+const targetTitleEl = document.getElementById("target-title");
+const targetNoteEl = document.getElementById("target-note");
+const targetLabelEl = document.getElementById("target-label");
+const targetInputEl = document.getElementById("target-input");
+const targetErrorEl = document.getElementById("target-error");
+const targetCancelEl = document.getElementById("target-cancel");
 
 // Every document lives under the signed-in user's own path (users/<id>/...), and the security
 // rules only let that user read it. userId is set when sign-in completes.
@@ -25,13 +71,31 @@ const habitDoc = (id) => doc(db, "users", userId, "habits", id);
 const saves = createSaveTracker(statusEl, showError);
 
 let habits = [];
-// date key (YYYY-MM-DD) -> grams of protein, as logged on the Nutrition page
-let proteinByDay = {};
-let nutritionLoaded = false;  // the built-in habit stays hidden until this data has arrived
+// date key (YYYY-MM-DD) -> { calories, protein }, as logged on the Nutrition page
+let nutritionByDay = {};
+let settings = defaultSettings();
+let activeAuto = null;        // the built-in habit whose setting the dialog is editing
+let nutritionLoaded = false;  // the built-in habits stay hidden until this data has arrived
+
+function defaultSettings() {
+  const values = {};
+  for (const auto of AUTO_HABITS) {
+    values[auto.setting] = auto.fallback;
+  }
+  return values;
+}
 
 function showError(err) {
   errorEl.textContent = typeof err === "string" ? err : describeFirestoreError(err);
   errorEl.hidden = false;
+}
+
+// Straight blend between the two colors. Done here, not with the CSS color-mix function, so it
+// also works in older browsers.
+function heatColor(count) {
+  const heat = Math.min(Math.max(count, 0), HEAT_FULL_AT) / HEAT_FULL_AT;
+  const channel = (index) => Math.round(COOL_RGB[index] + (HOT_RGB[index] - COOL_RGB[index]) * heat);
+  return "rgb(" + channel(0) + ", " + channel(1) + ", " + channel(2) + ")";
 }
 
 function isValidHabit(item) {
@@ -60,23 +124,87 @@ function listen() {
   }, showError);
 }
 
-// The Nutrition data comes from the same database, so the built-in habit is always computed from
-// the current numbers instead of being stored: edit a past day there and this follows.
+// The Nutrition data comes from the same database, so the built-in habits are always computed from
+// the current numbers instead of being stored: edit a past day there and they follow.
 const nutritionCollection = () => collection(db, "users", userId, "nutrition");
+
+function loggedAmount(value) {
+  return Number.isInteger(value) && value >= 0 ? value : null;
+}
 
 function listenNutrition() {
   return onSnapshot(nutritionCollection(), (snapshot) => {
-    proteinByDay = {};
+    nutritionByDay = {};
     for (const snap of snapshot.docs) {
-      const protein = snap.data().protein;
-      if (DATE_KEY_PATTERN.test(snap.id) && Number.isInteger(protein) && protein >= 0) {
-        proteinByDay[snap.id] = protein;
+      if (DATE_KEY_PATTERN.test(snap.id)) {
+        const data = snap.data();
+        nutritionByDay[snap.id] = { calories: loggedAmount(data.calories), protein: loggedAmount(data.protein) };
       }
     }
     nutritionLoaded = true;
     render();
   }, showError);
 }
+
+/* ---------- the built-in habits' numbers: one setting each, kept in the account's own settings ---------- */
+
+const settingsRef = () => doc(db, "users", userId, "meta", "settings");
+
+function isValidSetting(auto, value) {
+  return Number.isInteger(value) && value >= 1 && value <= auto.max;
+}
+
+// Live, so a change made on another device shows up here too. A missing or invalid stored value
+// means the fallback.
+function listenSettings() {
+  return onSnapshot(settingsRef(), (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    settings = defaultSettings();
+    for (const auto of AUTO_HABITS) {
+      if (isValidSetting(auto, data[auto.setting])) {
+        settings[auto.setting] = data[auto.setting];
+      }
+    }
+    render();
+  }, showError);
+}
+
+function openTargetDialog(auto) {
+  activeAuto = auto;
+  targetTitleEl.textContent = auto.dialogTitle;
+  targetNoteEl.textContent = auto.dialogNote;
+  targetLabelEl.textContent = auto.dialogLabel;
+  targetInputEl.max = auto.max;
+  targetInputEl.value = String(settings[auto.setting]);
+  targetErrorEl.hidden = true;
+  targetDialogEl.showModal();
+  targetInputEl.select();
+}
+
+targetFormEl.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const text = targetInputEl.value.trim();
+  const value = Number(text);
+  if (activeAuto === null) {
+    return;
+  }
+  if (targetInputEl.validity.badInput || text === "" || !isValidSetting(activeAuto, value)) {
+    targetErrorEl.textContent = "Use a whole number from 1 to " + activeAuto.max + ".";
+    targetErrorEl.hidden = false;
+    return;
+  }
+  settings[activeAuto.setting] = value;  // shown at once; the saved copy follows
+  saves.track(setDoc(settingsRef(), { [activeAuto.setting]: value }, { merge: true }));
+  render();
+  targetDialogEl.close();
+});
+
+targetCancelEl.addEventListener("click", () => targetDialogEl.close());
+targetDialogEl.addEventListener("click", (event) => {
+  if (event.target === targetDialogEl) {
+    targetDialogEl.close();
+  }
+});
 
 // Local date parts, not toISOString(): that converts to UTC and can give the wrong day.
 function todayKey() {
@@ -85,13 +213,14 @@ function todayKey() {
          String(now.getDate()).padStart(2, "0");
 }
 
-// Days at or above the target, counting only finished days: today is left out even if it
-// already reached the target, because the day is not over. Date keys sort like dates.
-function countProteinDays() {
+// Finished days that pass the test. Today is left out even if it already passes, because the day
+// is not over. Days with nothing logged for the field never count. Date keys sort like dates.
+function countDays(auto) {
   const today = todayKey();
   let days = 0;
-  for (const [key, protein] of Object.entries(proteinByDay)) {
-    if (key < today && protein >= PROTEIN_TARGET) {
+  for (const [key, entry] of Object.entries(nutritionByDay)) {
+    const logged = entry[auto.field];
+    if (key < today && logged !== null && auto.passes(logged, settings[auto.setting])) {
       days += 1;
     }
   }
@@ -193,24 +322,34 @@ function makeButton(className, label, text, onClick) {
   return button;
 }
 
-// The built-in row: no buttons, because its number is not typed in, it comes from Nutrition.
-function makeProteinRow() {
+// A built-in row has the same columns as a normal habit: name, number, then three button slots.
+// Only the first slot holds a button (change the setting); the other two are empty spacers, so the
+// numbers of all rows line up in one column. The explanation sits on its own line underneath.
+function makeAutoRow(auto) {
+  const value = settings[auto.setting];
   const row = document.createElement("li");
   row.className = "auto";
 
   const name = document.createElement("span");
   name.className = "name";
-  name.textContent = "Protein " + PROTEIN_TARGET + " g";
+  name.textContent = auto.title(value);
   const note = document.createElement("small");
   note.className = "auto-note";
-  note.textContent = "Automatic, from Nutrition. Up to yesterday.";
-  name.append(note);
+  note.textContent = auto.note(value);
 
+  const days = countDays(auto);
+  row.style.backgroundColor = heatColor(days);
   const count = document.createElement("span");
   count.className = "count";
-  count.textContent = String(countProteinDays());
+  count.textContent = String(days);
 
-  row.append(name, count);
+  const spacer = () => {
+    const slot = document.createElement("span");
+    slot.className = "slot";
+    return slot;
+  };
+  row.append(name, count, makeButton("edit", auto.changeLabel, "✎", () => openTargetDialog(auto)),
+             spacer(), spacer(), note);
   return row;
 }
 
@@ -218,7 +357,9 @@ function render() {
   listEl.replaceChildren();
 
   if (nutritionLoaded) {
-    listEl.append(makeProteinRow());
+    for (const auto of AUTO_HABITS) {
+      listEl.append(makeAutoRow(auto));
+    }
   }
 
   for (const habit of habits) {
@@ -229,6 +370,7 @@ function render() {
     name.className = "name";
     name.textContent = habit.name;
 
+    row.style.backgroundColor = heatColor(habit.count);
     const count = document.createElement("span");
     count.className = "count";
     count.textContent = String(habit.count);
@@ -261,6 +403,7 @@ formEl.addEventListener("submit", (event) => {
   inputEl.value = "";
 });
 
+// a day can end while the page is open: recount when the person comes back to it
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && nutritionLoaded) {
     render();
@@ -273,13 +416,20 @@ initGate({
     offerImport();
     const unsubscribe = listen();
     const unsubscribeNutrition = listenNutrition();
+    const unsubscribeSettings = listenSettings();
     return () => {
       unsubscribe();
       unsubscribeNutrition();
+      unsubscribeSettings();
+      if (targetDialogEl.open) {
+        targetDialogEl.close();
+      }
+      activeAuto = null;
+      settings = defaultSettings();
       userId = null;
       // drop the data from memory and screen when signing out
       habits = [];
-      proteinByDay = {};
+      nutritionByDay = {};
       nutritionLoaded = false;
       render();
     };

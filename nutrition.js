@@ -1,7 +1,8 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, limit, onSnapshot, getDoc, getDocs, getDocFromCache, setDoc, writeBatch,
-} from "./firebase.js?v=30";
+  increment,
+} from "./firebase.js?v=31";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "nutrition.log";
@@ -33,6 +34,12 @@ const avgCaloriesEl = document.getElementById("avg-calories");
 const avgProteinEl = document.getElementById("avg-protein");
 const daysLoggedEl = document.getElementById("days-logged");
 const chartEl = document.getElementById("chart");
+const logDialogEl = document.getElementById("log-dialog");
+const logFormEl = document.getElementById("log-form");
+const logCaloriesEl = document.getElementById("log-calories");
+const logProteinEl = document.getElementById("log-protein");
+const logErrorEl = document.getElementById("log-error");
+const logCancelEl = document.getElementById("log-cancel");
 
 // one document per day, named by its date key; fields: calories, protein (number or null)
 let userId = null;  // set when sign-in completes; everything lives under users/<id>/
@@ -287,6 +294,10 @@ function renderTable() {
                makeAmountCell(key, label, "calories"),
                makeAmountCell(key, label, "protein"));
     rowsEl.append(row);
+    // the "Log food" button belongs to today's row only
+    if (key === today) {
+      rowsEl.append(makeLogRow());
+    }
   }
 
   renderStats();
@@ -508,6 +519,96 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("pagehide", flushDrafts);
 
+/* ---------- log food: add a meal to today's totals ---------- */
+
+function makeLogRow() {
+  const row = document.createElement("tr");
+  row.className = "log-row";
+  const cell = document.createElement("td");
+  cell.colSpan = 3;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "block primary";
+  button.textContent = "Log food";
+  button.addEventListener("click", openLogDialog);
+  cell.append(button);
+  row.append(cell);
+  return row;
+}
+
+function openLogDialog() {
+  // the page may have been open since yesterday: make sure "today" really is today first
+  if (todayKey() !== renderedToday) {
+    renderTable();
+  }
+  logCaloriesEl.value = "";
+  logProteinEl.value = "";
+  logErrorEl.hidden = true;
+  logDialogEl.showModal();
+}
+
+function showLogError(message) {
+  logErrorEl.textContent = message;
+  logErrorEl.hidden = false;
+}
+
+// increment() is applied by the server, so two devices logging at the same moment both count.
+// Edits still waiting for their typing pause are sent first, so the meal lands on top of them.
+function addToDay(key, added) {
+  flushDrafts();
+  const data = {};
+  const entry = log[key] || { calories: null, protein: null };
+  for (const [field, value] of Object.entries(added)) {
+    data[field] = increment(value);
+    // our own copy moves right away, so the cells and averages do not wait for the network
+    entry[field] = (entry[field] === null ? 0 : entry[field]) + value;
+  }
+  log[key] = entry;
+  saves.track(setDoc(nutritionDoc(key), data, { merge: true }));
+  syncInputs();
+  renderStats();
+}
+
+logFormEl.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const added = {};
+  for (const [field, input] of [["calories", logCaloriesEl], ["protein", logProteinEl]]) {
+    const text = input.value.trim();
+    if (text === "") {
+      continue;  // left blank: that field is not touched
+    }
+    const value = Number(text);
+    if (input.validity.badInput || !isValidAmount(field, value)) {
+      showLogError("Use a whole number from 0 to " + MAX_AMOUNT[field] + " for " + field + ".");
+      return;
+    }
+    added[field] = value;
+  }
+  if (Object.keys(added).length === 0) {
+    showLogError("Enter calories, protein, or both.");
+    return;
+  }
+
+  const key = todayKey();
+  for (const [field, value] of Object.entries(added)) {
+    const current = amountOf(key, field) || 0;
+    if (current + value > MAX_AMOUNT[field]) {
+      showLogError("That would take today's " + field + " above " + MAX_AMOUNT[field] + ".");
+      return;
+    }
+  }
+  addToDay(key, added);
+  logDialogEl.close();
+});
+
+logCancelEl.addEventListener("click", () => logDialogEl.close());
+// a tap on the dimmed area outside the box also closes it
+logDialogEl.addEventListener("click", (event) => {
+  if (event.target === logDialogEl) {
+    logDialogEl.close();
+  }
+});
+
 /* ---------- one-time import of data saved in this browser ---------- */
 
 function readLegacyEntries() {
@@ -629,6 +730,9 @@ initGate({
       renderedToday = null;
       rowsEl.replaceChildren();
       chartEl.replaceChildren();
+      if (logDialogEl.open) {
+        logDialogEl.close();
+      }
     };
   },
 });
