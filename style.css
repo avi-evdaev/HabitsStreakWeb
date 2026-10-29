@@ -21,7 +21,8 @@
   --btn2-border: #2c2e33;
   --btn2-ink: #ffffff;
   --btn2-hover: #3d4047;
-  --cell: 52px;
+  /* one height for every input and button, so nothing looks bigger than its neighbour */
+  --cell: 48px;
   /* An old-book serif for the quotes: Baskerville ships with macOS and iOS */
   --book: Baskerville, "Baskerville Old Face", "Libre Baskerville", Georgia, "Times New Roman", serif;
   color-scheme: light dark;
@@ -149,7 +150,7 @@ li {
 }
 
 /* Fixed width AND height, with flex-shrink off, so these stay true squares even when a
-   long habit name wraps onto two lines. 52px is also above Apple's 44px tap-target minimum. */
+   long habit name wraps onto two lines. 48px is also above Apple's 44px tap-target minimum. */
 .count,
 button.icon {
   width: var(--cell);
@@ -235,54 +236,29 @@ input::placeholder { color: var(--muted); }
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* one wide button per app: [ number | name | arrow ], like a row of square cells */
+/* one wide dark-grey button per app: the name on the left, a blue arrow on the right */
 .tile {
   display: flex;
-  align-items: stretch;
-  min-height: 76px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--ink);
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  padding: 0 18px;
+  background: var(--panel);
+  border: 1px solid var(--panel);
+  color: var(--panel-ink);
   text-decoration: none;
 }
-.tile:hover { border-color: var(--accent-line); }
-.tile:hover .tile-arrow { color: var(--accent-line); }
-.tile:active { opacity: 0.8; }
+.tile:hover { background: var(--btn2-hover); }
+.tile:active { opacity: 0.85; }
 .tile:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
 
-.tile-num {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 76px;
-  background: #000000;
-  color: #ffffff;
-  font-size: 1.4rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
+.tile-name { font-size: 1.05rem; font-weight: 500; overflow-wrap: anywhere; }
 
-.tile-name {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  padding: 0 18px;
-  font-size: 1.1rem;
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
-.tile-arrow {
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  color: var(--muted);
-  font-size: 1.4rem;
-}
+/* a lighter blue than the buttons', so the arrow reads on dark grey */
+.tile-arrow { margin-left: 12px; color: #7aa7ff; font-size: 1.4rem; line-height: 1; }
 
 /* ---------- pomodoro ---------- */
 
@@ -304,14 +280,14 @@ button.block:focus-visible { outline: 2px solid var(--accent-line); outline-offs
 button.big {
   display: block;
   width: 100%;
-  height: 96px;
-  font-size: 1.6rem;
-  letter-spacing: 0.02em;
+  height: 64px;
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
 }
 
 button.wide {
   flex: 1;
-  height: 52px;
+  height: var(--cell);
   font-size: 1rem;
 }
 
@@ -561,7 +537,7 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 .home-quote { margin: 32px 0 0; }
 .home-quote .quote-text { font-size: clamp(1.15rem, 4.6vw, 1.5rem); }
 
-#another { display: block; width: 100%; height: 48px; font-size: 1rem; }
+#another { display: block; width: 100%; height: var(--cell); font-size: 1rem; }
 
 .quote-form { display: flex; flex-direction: column; gap: 12px; margin-top: 0; }
 .section-title { margin: 28px 0 12px; }
@@ -594,7 +570,7 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 .gate button.block {
   display: block;
   width: 100%;
-  height: 56px;
+  height: 52px;
   font-size: 1rem;
 }
 .gate .error { margin-top: 16px; }
@@ -603,7 +579,7 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 #move {
   display: block;
   width: 100%;
-  height: 52px;
+  height: var(--cell);
   font-size: 1rem;
 }
 #import { margin: 0 0 16px; }
