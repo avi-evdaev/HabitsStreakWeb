@@ -2,7 +2,8 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=36";
+} from "./firebase.js?v=37";
+import { GOAL_DEFAULTS, GOAL_MAX } from "./goals.js?v=37";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
@@ -24,8 +25,8 @@ const AUTO_HABITS = [
   {
     field: "protein",
     setting: "proteinTarget",
-    fallback: 140,
-    max: 1000,
+    fallback: GOAL_DEFAULTS.proteinTarget,
+    max: GOAL_MAX.proteinTarget,
     title: (value) => "Protein " + value + " g",
     note: () => "Day streak, from Tracker. Resets if a day is missed",
     passes: (logged, value) => logged >= value,
@@ -37,8 +38,8 @@ const AUTO_HABITS = [
   {
     field: "calories",
     setting: "calorieLimit",
-    fallback: 2000,
-    max: 20000,
+    fallback: GOAL_DEFAULTS.calorieLimit,
+    max: GOAL_MAX.calorieLimit,
     title: () => "Calorie deficit",
     note: (value) => "Day streak at or under " + value + " kcal. Resets if missed",
     // a logged 0 is treated as "nothing logged", so an empty day is never counted as a deficit

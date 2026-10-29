@@ -577,6 +577,13 @@ dialog.dialog::backdrop { background: rgba(0, 0, 0, 0.78); }
 #chart .line.protein { stroke: var(--accent-line); }
 #chart .dot.calories { fill: var(--ink); }
 #chart .dot.protein { fill: var(--accent-line); }
+/* goal lines: dotted and faded, so they read as a target, not as data */
+#chart .guide { stroke-width: 2; stroke-linecap: round; stroke-dasharray: 0.1 6; opacity: 0.55; }
+#chart .guide.calories { stroke: var(--ink); }
+#chart .guide.protein { stroke: var(--accent-line); }
+/* a thin outline in the panel color keeps the label readable where a data line crosses it */
+#chart text.guide-label { font-size: 10px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+#chart text.guide-label.protein { fill: var(--accent-line); }
 
 .legend {
   display: flex;

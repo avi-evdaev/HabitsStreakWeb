@@ -2,8 +2,9 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, limit, onSnapshot, getDoc, getDocs, getDocFromCache, setDoc, writeBatch,
   increment,
-} from "./firebase.js?v=36";
-import { drawLineChart } from "./chart.js?v=36";
+} from "./firebase.js?v=37";
+import { drawLineChart } from "./chart.js?v=37";
+import { GOAL_DEFAULTS, readGoals } from "./goals.js?v=37";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "nutrition.log";
@@ -48,6 +49,18 @@ const nutritionDoc = (key) => doc(db, "users", userId, "nutrition", key);
 // this page; one that already has entries keeps the original start date. The choice is saved
 // once, so the first day never moves and later visits read it from the local copy.
 let start = DEFAULT_START;
+
+// The person's two daily goals, drawn as dotted lines on the graph. They are changed on the Habits
+// page and kept in the account's settings, so this page just listens to them.
+let goals = { ...GOAL_DEFAULTS };
+const settingsRef = () => doc(db, "users", userId, "meta", "settings");
+
+function listenGoals() {
+  return onSnapshot(settingsRef(), (snap) => {
+    goals = readGoals(snap.exists() ? snap.data() : {});
+    renderChart();
+  }, showError);
+}
 const startRef = () => doc(db, "users", userId, "meta", "nutrition");
 
 function isValidStart(data) {
@@ -347,6 +360,17 @@ function renderChart() {
   drawLineChart(chartEl, {
     labels: labels,
     emptyMax: EMPTY_CHART_MAX,
+    guides: [
+      {
+        name: "calories", value: goals.calorieLimit, label: goals.calorieLimit + " kcal",
+        tip: "Calorie limit: " + goals.calorieLimit + " kcal",
+      },
+      {
+        // on the chart protein is x10, so its goal line sits where a day on target would
+        name: "protein", value: goals.proteinTarget * PROTEIN_SCALE, label: goals.proteinTarget + " g",
+        tip: "Protein target: " + goals.proteinTarget + " g",
+      },
+    ],
     series: [
       { name: "calories", values: calories, tip: (index) => labels[index] + ": " + calories[index] + " kcal" },
       {
@@ -594,6 +618,7 @@ initGate({
     userId = user.uid;
     offerImport();
     let unsubscribe = null;
+    let unsubscribeGoals = null;
     let signedOut = false;
     // the table needs this account's first day, so that is read before anything is drawn
     loadStart().then((loaded) => {
@@ -603,12 +628,17 @@ initGate({
       start = loaded;
       renderTable();
       unsubscribe = onSnapshot(nutritionCollection(), applySnapshot, showError);
+      unsubscribeGoals = listenGoals();
     }).catch(showError);
     return () => {
       signedOut = true;
       if (unsubscribe !== null) {
         unsubscribe();
       }
+      if (unsubscribeGoals !== null) {
+        unsubscribeGoals();
+      }
+      goals = { ...GOAL_DEFAULTS };
       userId = null;
       // drop the data from memory and screen when signing out
       for (const draft of drafts.values()) {

@@ -48,6 +48,8 @@ function runsOf(points) {
 //   series      [{ name, values, tip }]. values has one number (or null for "no data") per day, already
 //               scaled to the shared axis; name becomes a CSS class; tip(index) is the hover text
 //   emptyMax    the top of the axis to draw while there is no data at all
+//   guides      [{ name, value, label, tip }]: faded dotted horizontal lines (for goals), drawn at
+//               value on the shared axis. The axis always stretches to include them.
 //   minMax      the smallest top the axis may have (default 100), so small numbers are not squashed
 //   emptyText   the note shown on an empty chart
 export function drawLineChart(svg, options) {
@@ -61,7 +63,9 @@ export function drawLineChart(svg, options) {
   // With no data the axes are still drawn, on a typical scale, so the graph is visible from
   // day one instead of appearing only after the first entry.
   const floor = options.minMax === undefined ? 100 : options.minMax;
-  const scale = niceScale(hasData ? Math.max(...allValues) : options.emptyMax, floor);
+  const guides = options.guides || [];
+  const dataTop = hasData ? Math.max(...allValues) : options.emptyMax;
+  const scale = niceScale(Math.max(dataTop, ...guides.map((guide) => guide.value)), floor);
   const plotWidth = CHART.width - CHART.left - CHART.right;
   const plotHeight = CHART.height - CHART.top - CHART.bottom;
   const xAt = (index) => CHART.left + (count === 1 ? plotWidth / 2 : (index * plotWidth) / (count - 1));
@@ -96,6 +100,30 @@ export function drawLineChart(svg, options) {
     svg.append(label);
   }
 
+  // goal lines sit behind the data, and show on an empty chart too
+  for (const guide of guides) {
+    const y = yAt(guide.value);
+    const line = svgEl("line", {
+      class: "guide " + guide.name,
+      x1: CHART.left, x2: CHART.width - CHART.right, y1: y, y2: y,
+    });
+    const tip = svgEl("title");
+    tip.textContent = guide.tip;
+    line.append(tip);
+    svg.append(line);
+  }
+  // the labels go on last, on top of the data, so a point never hides them
+  const appendGuideLabels = () => {
+    for (const guide of guides) {
+      const label = svgEl("text", {
+        class: "guide-label " + guide.name,
+        x: CHART.width - CHART.right - 4, y: yAt(guide.value) - 4, "text-anchor": "end",
+      });
+      label.textContent = guide.label;
+      svg.append(label);
+    }
+  };
+
   if (!hasData) {
     const note = svgEl("text", {
       class: "placeholder",
@@ -103,6 +131,7 @@ export function drawLineChart(svg, options) {
     });
     note.textContent = options.emptyText || "No data yet";
     svg.append(note);
+    appendGuideLabels();
     return;
   }
 
@@ -130,4 +159,5 @@ export function drawLineChart(svg, options) {
       svg.append(dot);
     }
   }
+  appendGuideLabels();
 }
