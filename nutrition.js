@@ -1,12 +1,13 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
-  collection, doc, onSnapshot, setDoc, writeBatch,
-} from "./firebase.js?v=27";
+  collection, doc, query, limit, onSnapshot, getDoc, getDocs, getDocFromCache, setDoc, writeBatch,
+} from "./firebase.js?v=28";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "nutrition.log";
-// First tracked day. The year only keys the stored data; the table shows just day and month.
-const START = { year: 2026, month: 10, day: 26 };
+// The first account's start day. The year only keys the stored data; the table shows just day
+// and month. Accounts that already hold entries from before start dates were per account keep it.
+const DEFAULT_START = { year: 2026, month: 10, day: 26 };
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const FIELDS = ["calories", "protein"];
@@ -37,6 +38,48 @@ const chartEl = document.getElementById("chart");
 let userId = null;  // set when sign-in completes; everything lives under users/<id>/
 const nutritionCollection = () => collection(db, "users", userId, "nutrition");
 const nutritionDoc = (key) => doc(db, "users", userId, "nutrition", key);
+
+// Every account has its own first day. A brand-new account starts on the day it first opens
+// this page; one that already has entries keeps the original start date. The choice is saved
+// once, so the first day never moves and later visits read it from the local copy.
+let start = DEFAULT_START;
+const startRef = () => doc(db, "users", userId, "meta", "nutrition");
+
+function isValidStart(data) {
+  return data !== null && typeof data === "object" &&
+         Number.isInteger(data.year) && Number.isInteger(data.month) && Number.isInteger(data.day) &&
+         data.month >= 1 && data.month <= 12 && data.day >= 1 && data.day <= 31;
+}
+
+async function loadStart() {
+  let stored = null;
+  try {
+    const cached = await getDocFromCache(startRef());
+    if (cached.exists()) {
+      stored = cached.data();
+    }
+  } catch (err) {
+    // not stored locally yet
+  }
+  if (stored === null) {
+    const fromServer = await getDoc(startRef());
+    if (fromServer.exists()) {
+      stored = fromServer.data();
+    }
+  }
+  if (isValidStart(stored)) {
+    return { year: stored.year, month: stored.month, day: stored.day };
+  }
+
+  const existing = await getDocs(query(nutritionCollection(), limit(1)));
+  let chosen = DEFAULT_START;
+  if (existing.empty) {
+    const now = new Date();
+    chosen = { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+  }
+  saves.track(setDoc(startRef(), chosen));
+  return chosen;
+}
 const saves = createSaveTracker(statusEl, showError);
 
 let log = {};              // what the database last told us (plus our own sent edits)
@@ -187,7 +230,7 @@ function todayKey() {
 function buildDays() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const days = [new Date(START.year, START.month - 1, START.day)];
+  const days = [new Date(start.year, start.month - 1, start.day)];
   for (;;) {
     const last = days[days.length - 1];
     const next = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
@@ -558,11 +601,23 @@ importEl.addEventListener("click", async () => {
 initGate({
   onSignedIn(user) {
     userId = user.uid;
-    renderTable();
     offerImport();
-    const unsubscribe = onSnapshot(nutritionCollection(), applySnapshot, showError);
+    let unsubscribe = null;
+    let signedOut = false;
+    // the table needs this account's first day, so that is read before anything is drawn
+    loadStart().then((loaded) => {
+      if (signedOut) {
+        return;
+      }
+      start = loaded;
+      renderTable();
+      unsubscribe = onSnapshot(nutritionCollection(), applySnapshot, showError);
+    }).catch(showError);
     return () => {
-      unsubscribe();
+      signedOut = true;
+      if (unsubscribe !== null) {
+        unsubscribe();
+      }
       userId = null;
       // drop the data from memory and screen when signing out
       for (const draft of drafts.values()) {

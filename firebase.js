@@ -46,9 +46,8 @@ export const db = openDatabase();
 
 export function describeFirestoreError(err) {
   if (err && err.code === "permission-denied") {
-    // The same error means two different things, and the app cannot tell which
-    return "Access denied by the database rules. Either this Google account is not allowed, " +
-           "or the latest rules have not been published (Firebase console > Firestore > Rules).";
+    return "Access denied by the database rules. The latest rules may not be published yet " +
+           "(Firebase console > Firestore > Rules).";
   }
   if (err && err.code === "unavailable") {
     return "Cannot reach the database. Check your connection.";
