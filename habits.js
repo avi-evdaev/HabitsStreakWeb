@@ -2,7 +2,7 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=33";
+} from "./firebase.js?v=34";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
@@ -15,7 +15,7 @@ const COOL_RGB = [28, 28, 30];
 const HOT_RGB = [209, 17, 27];
 
 // Built-in habits. Their numbers are not typed in: each one is the current day streak on the
-// Nutrition page, meaning finished days in a row whose logged value passes a test against a number
+// Tracker page, meaning finished days in a row whose logged value passes a test against a number
 // the person sets for themselves.
 // Everyone starts at the fallback and can change their own (kept in the account's settings).
 const AUTO_HABITS = [
@@ -25,7 +25,7 @@ const AUTO_HABITS = [
     fallback: 140,
     max: 1000,
     title: (value) => "Protein " + value + " g",
-    note: () => "Day streak, from Nutrition. Resets if a day is missed",
+    note: () => "Day streak, from Tracker. Resets if a day is missed",
     passes: (logged, value) => logged >= value,
     changeLabel: "Change the protein target",
     dialogTitle: "Protein target",
@@ -72,7 +72,7 @@ const habitDoc = (id) => doc(db, "users", userId, "habits", id);
 const saves = createSaveTracker(statusEl, showError);
 
 let habits = [];
-// date key (YYYY-MM-DD) -> { calories, protein }, as logged on the Nutrition page
+// date key (YYYY-MM-DD) -> { calories, protein }, as logged on the Tracker page
 let nutritionByDay = {};
 let settings = defaultSettings();
 let activeAuto = null;        // the built-in habit whose setting the dialog is editing
@@ -125,7 +125,7 @@ function listen() {
   }, showError);
 }
 
-// The Nutrition data comes from the same database, so the built-in habits are always computed from
+// The Tracker data comes from the same database, so the built-in habits are always computed from
 // the current numbers instead of being stored: edit a past day there and they follow.
 const nutritionCollection = () => collection(db, "users", userId, "nutrition");
 

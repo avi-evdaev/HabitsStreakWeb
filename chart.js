@@ -1,4 +1,4 @@
-// A small line chart drawn as SVG, shared by the pages that have a graph (Nutrition, Reading).
+// A small line chart drawn as SVG, shared by the pages that have a graph (Tracker, Reading).
 // It draws into an existing <svg viewBox="0 0 360 300"> element and needs no library.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
