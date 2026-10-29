@@ -136,6 +136,16 @@ li {
 }
 li + li { border-top: 1px solid var(--line); }
 
+/* the built-in habit: same row, but no buttons, and a quiet line saying where its number comes from */
+li.auto .count { color: var(--accent-line); }
+.auto-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
 .name {
   flex: 1;
   padding: 0 4px;

@@ -1,10 +1,13 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, increment, writeBatch,
-} from "./firebase.js?v=29";
+} from "./firebase.js?v=30";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
+// The built-in protein habit counts days at or above this many grams (from the Nutrition page).
+const PROTEIN_TARGET = 140;
+const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const listEl = document.getElementById("habit-list");
 const emptyEl = document.getElementById("empty");
@@ -22,6 +25,9 @@ const habitDoc = (id) => doc(db, "users", userId, "habits", id);
 const saves = createSaveTracker(statusEl, showError);
 
 let habits = [];
+// date key (YYYY-MM-DD) -> grams of protein, as logged on the Nutrition page
+let proteinByDay = {};
+let nutritionLoaded = false;  // the built-in habit stays hidden until this data has arrived
 
 function showError(err) {
   errorEl.textContent = typeof err === "string" ? err : describeFirestoreError(err);
@@ -52,6 +58,44 @@ function listen() {
     render();
     saves.show();
   }, showError);
+}
+
+// The Nutrition data comes from the same database, so the built-in habit is always computed from
+// the current numbers instead of being stored: edit a past day there and this follows.
+const nutritionCollection = () => collection(db, "users", userId, "nutrition");
+
+function listenNutrition() {
+  return onSnapshot(nutritionCollection(), (snapshot) => {
+    proteinByDay = {};
+    for (const snap of snapshot.docs) {
+      const protein = snap.data().protein;
+      if (DATE_KEY_PATTERN.test(snap.id) && Number.isInteger(protein) && protein >= 0) {
+        proteinByDay[snap.id] = protein;
+      }
+    }
+    nutritionLoaded = true;
+    render();
+  }, showError);
+}
+
+// Local date parts, not toISOString(): that converts to UTC and can give the wrong day.
+function todayKey() {
+  const now = new Date();
+  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" +
+         String(now.getDate()).padStart(2, "0");
+}
+
+// Days at or above the target, counting only finished days: today is left out even if it
+// already reached the target, because the day is not over. Date keys sort like dates.
+function countProteinDays() {
+  const today = todayKey();
+  let days = 0;
+  for (const [key, protein] of Object.entries(proteinByDay)) {
+    if (key < today && protein >= PROTEIN_TARGET) {
+      days += 1;
+    }
+  }
+  return days;
 }
 
 function addHabit(name) {
@@ -149,8 +193,33 @@ function makeButton(className, label, text, onClick) {
   return button;
 }
 
+// The built-in row: no buttons, because its number is not typed in, it comes from Nutrition.
+function makeProteinRow() {
+  const row = document.createElement("li");
+  row.className = "auto";
+
+  const name = document.createElement("span");
+  name.className = "name";
+  name.textContent = "Protein " + PROTEIN_TARGET + " g";
+  const note = document.createElement("small");
+  note.className = "auto-note";
+  note.textContent = "Automatic, from Nutrition. Up to yesterday.";
+  name.append(note);
+
+  const count = document.createElement("span");
+  count.className = "count";
+  count.textContent = String(countProteinDays());
+
+  row.append(name, count);
+  return row;
+}
+
 function render() {
   listEl.replaceChildren();
+
+  if (nutritionLoaded) {
+    listEl.append(makeProteinRow());
+  }
 
   for (const habit of habits) {
     const row = document.createElement("li");
@@ -192,16 +261,26 @@ formEl.addEventListener("submit", (event) => {
   inputEl.value = "";
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && nutritionLoaded) {
+    render();
+  }
+});
+
 initGate({
   onSignedIn(user) {
     userId = user.uid;
     offerImport();
     const unsubscribe = listen();
+    const unsubscribeNutrition = listenNutrition();
     return () => {
       unsubscribe();
+      unsubscribeNutrition();
       userId = null;
       // drop the data from memory and screen when signing out
       habits = [];
+      proteinByDay = {};
+      nutritionLoaded = false;
       render();
     };
   },
