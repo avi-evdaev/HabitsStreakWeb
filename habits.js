@@ -2,7 +2,7 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=31";
+} from "./firebase.js?v=32";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
@@ -14,8 +14,9 @@ const HEAT_FULL_AT = 10;
 const COOL_RGB = [28, 28, 30];
 const HOT_RGB = [209, 17, 27];
 
-// Built-in habits. Their numbers are not typed in: each one counts the finished days on the
-// Nutrition page whose logged value passes a test against a number the person sets for themselves.
+// Built-in habits. Their numbers are not typed in: each one is the current day streak on the
+// Nutrition page, meaning finished days in a row whose logged value passes a test against a number
+// the person sets for themselves.
 // Everyone starts at the fallback and can change their own (kept in the account's settings).
 const AUTO_HABITS = [
   {
@@ -24,11 +25,11 @@ const AUTO_HABITS = [
     fallback: 140,
     max: 1000,
     title: (value) => "Protein " + value + " g",
-    note: () => "Automatic, from Nutrition, up to yesterday",
+    note: () => "Day streak, from Nutrition. Resets if a day is missed",
     passes: (logged, value) => logged >= value,
     changeLabel: "Change the protein target",
     dialogTitle: "Protein target",
-    dialogNote: "Days at or above this many grams count, up to yesterday.",
+    dialogNote: "Each day at or above this many grams extends your streak. A day below it, or with nothing logged, resets it to 0. Today only counts once it is over.",
     dialogLabel: "Grams per day",
   },
   {
@@ -37,12 +38,12 @@ const AUTO_HABITS = [
     fallback: 2000,
     max: 20000,
     title: () => "Calorie deficit",
-    note: (value) => "At or under " + value + " kcal. Automatic, up to yesterday",
+    note: (value) => "Day streak at or under " + value + " kcal. Resets if missed",
     // a logged 0 is treated as "nothing logged", so an empty day is never counted as a deficit
     passes: (logged, value) => logged > 0 && logged <= value,
     changeLabel: "Change the calorie limit",
     dialogTitle: "Calorie limit",
-    dialogNote: "Days at or under this many calories count as a deficit, up to yesterday.",
+    dialogNote: "Each day at or under this many calories extends your deficit streak. A day above it, or with nothing logged, resets it to 0. Today only counts once it is over.",
     dialogLabel: "Calories per day",
   },
 ];
@@ -207,24 +208,31 @@ targetDialogEl.addEventListener("click", (event) => {
 });
 
 // Local date parts, not toISOString(): that converts to UTC and can give the wrong day.
-function todayKey() {
-  const now = new Date();
-  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" +
-         String(now.getDate()).padStart(2, "0");
+function dateKey(date) {
+  return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" +
+         String(date.getDate()).padStart(2, "0");
 }
 
-// Finished days that pass the test. Today is left out even if it already passes, because the day
-// is not over. Days with nothing logged for the field never count. Date keys sort like dates.
-function countDays(auto) {
-  const today = todayKey();
-  let days = 0;
-  for (const [key, entry] of Object.entries(nutritionByDay)) {
-    const logged = entry[auto.field];
-    if (key < today && logged !== null && auto.passes(logged, settings[auto.setting])) {
-      days += 1;
+// A day streak: starting from yesterday and going back one day at a time, how many days in a row
+// pass the test. The first day that fails, or has nothing logged, ends it, and what came before
+// no longer counts, so a miss sends the number back to 0. Today is never looked at: the day is
+// not over, so it can neither extend the streak nor break it.
+const MAX_STREAK_LOOKBACK = 3660;  // ten years of days: a safety stop, the data ends long before
+
+function streakDays(auto) {
+  const limit = settings[auto.setting];
+  const day = new Date();
+  let streak = 0;
+  for (let step = 0; step < MAX_STREAK_LOOKBACK; step += 1) {
+    day.setDate(day.getDate() - 1);  // calendar arithmetic, so month ends and clock changes are safe
+    const entry = nutritionByDay[dateKey(day)];
+    const logged = entry ? entry[auto.field] : null;
+    if (logged === null || !auto.passes(logged, limit)) {
+      return streak;
     }
+    streak += 1;
   }
-  return days;
+  return streak;
 }
 
 function addHabit(name) {
@@ -337,7 +345,7 @@ function makeAutoRow(auto) {
   note.className = "auto-note";
   note.textContent = auto.note(value);
 
-  const days = countDays(auto);
+  const days = streakDays(auto);
   row.style.backgroundColor = heatColor(days);
   const count = document.createElement("span");
   count.className = "count";
