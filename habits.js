@@ -2,17 +2,19 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=34";
+} from "./firebase.js?v=35";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_ORDER_ITEMS = 500;
 
-// A habit row heats up with its count: grey at 0, a little redder with each one, full red at
-// HEAT_FULL_AT and beyond. The cool end is the normal row grey, so a habit at 0 looks unchanged.
+// A habit row grows greener with its streak: grey at 0, a little greener with each day, full green at
+// HEAT_FULL_AT and beyond. The grey end is the normal row grey, so a habit at 0 looks unchanged. The
+// green is dark enough for white text on it to stay readable.
 const HEAT_FULL_AT = 10;
 const COOL_RGB = [28, 28, 30];
-const HOT_RGB = [209, 17, 27];
+const HOT_RGB = [24, 134, 64];
 
 // Built-in habits. Their numbers are not typed in: each one is the current day streak on the
 // Tracker page, meaning finished days in a row whose logged value passes a test against a number
@@ -54,6 +56,7 @@ const errorEl = document.getElementById("error");
 const formEl = document.getElementById("add-form");
 const inputEl = document.getElementById("new-habit");
 const importEl = document.getElementById("import");
+const editToggleEl = document.getElementById("edit-toggle");
 const statusEl = document.getElementById("status");
 const targetDialogEl = document.getElementById("target-dialog");
 const targetFormEl = document.getElementById("target-form");
@@ -75,6 +78,12 @@ let habits = [];
 // date key (YYYY-MM-DD) -> { calories, protein }, as logged on the Tracker page
 let nutritionByDay = {};
 let settings = defaultSettings();
+// The order the person chose, as a list of ids: the id of a habit, or "auto:<field>" for a built-in one.
+// Kept in the account's settings so it follows them across devices.
+let habitOrder = [];
+// Edit mode: each row shows move buttons (and delete, or the target button for a built-in habit)
+// instead of the everyday + and reset buttons, so editing can't change a count by accident.
+let editing = false;
 let activeAuto = null;        // the built-in habit whose setting the dialog is editing
 let nutritionLoaded = false;  // the built-in habits stay hidden until this data has arrived
 
@@ -166,8 +175,14 @@ function listenSettings() {
         settings[auto.setting] = data[auto.setting];
       }
     }
+    habitOrder = isValidOrder(data.habitOrder) ? data.habitOrder : [];
     render();
   }, showError);
+}
+
+function isValidOrder(value) {
+  return Array.isArray(value) && value.length <= MAX_ORDER_ITEMS &&
+         value.every((id) => typeof id === "string" && id.length > 0 && id.length <= 100);
 }
 
 function openTargetDialog(auto) {
@@ -330,10 +345,29 @@ function makeButton(className, label, text, onClick) {
   return button;
 }
 
-// A built-in row has the same columns as a normal habit: name, number, then three button slots.
-// Only the first slot holds a button (change the setting); the other two are empty spacers, so the
-// numbers of all rows line up in one column. The explanation sits on its own line underneath.
-function makeAutoRow(auto) {
+// Every row has the same columns: name, number, then three button slots. That keeps the numbers of
+// all rows in one column, whatever the row holds.
+function makeSpacer() {
+  const slot = document.createElement("span");
+  slot.className = "slot";
+  return slot;
+}
+
+// The first two slots in edit mode: move up, move down.
+function makeMoveButtons(item, index, total) {
+  const up = makeButton("move", "Move up", "\u2191", () => moveItem(item.id, -1));
+  const down = makeButton("move", "Move down", "\u2193", () => moveItem(item.id, 1));
+  up.dataset.move = item.id + ":up";
+  down.dataset.move = item.id + ":down";
+  up.disabled = index === 0;
+  down.disabled = index === total - 1;
+  return [up, down];
+}
+
+// A built-in row. Normally it only shows its number; in edit mode it can be moved, and its third
+// button changes the setting it counts against. The explanation sits on its own line underneath.
+function makeAutoRow(item, index, total) {
+  const auto = item.auto;
   const value = settings[auto.setting];
   const row = document.createElement("li");
   row.className = "auto";
@@ -351,55 +385,130 @@ function makeAutoRow(auto) {
   count.className = "count";
   count.textContent = String(days);
 
-  const spacer = () => {
-    const slot = document.createElement("span");
-    slot.className = "slot";
-    return slot;
-  };
-  row.append(name, count, makeButton("edit", auto.changeLabel, "✎", () => openTargetDialog(auto)),
-             spacer(), spacer(), note);
+  const slots = editing
+    ? [...makeMoveButtons(item, index, total), makeButton("edit", auto.changeLabel, "\u270e", () => openTargetDialog(auto))]
+    : [makeSpacer(), makeSpacer(), makeSpacer()];
+  row.append(name, count, ...slots, note);
   return row;
 }
 
-function render() {
-  listEl.replaceChildren();
+function makeHabitRow(item, index, total) {
+  const habit = item.habit;
+  const row = document.createElement("li");
 
-  if (nutritionLoaded) {
-    for (const auto of AUTO_HABITS) {
-      listEl.append(makeAutoRow(auto));
-    }
-  }
+  // textContent, not innerHTML: habit names are user input and must not be parsed as HTML.
+  const name = document.createElement("span");
+  name.className = "name";
+  name.dir = "auto";  // a Hebrew habit name reads right-to-left
+  name.textContent = habit.name;
 
-  for (const habit of habits) {
-    const row = document.createElement("li");
+  row.style.backgroundColor = heatColor(habit.count);
+  const count = document.createElement("span");
+  count.className = "count";
+  count.textContent = String(habit.count);
 
-    // textContent, not innerHTML: habit names are user input and must not be parsed as HTML.
-    const name = document.createElement("span");
-    name.className = "name";
-    name.dir = "auto";  // a Hebrew habit name reads right-to-left
-    name.textContent = habit.name;
-
-    row.style.backgroundColor = heatColor(habit.count);
-    const count = document.createElement("span");
-    count.className = "count";
-    count.textContent = String(habit.count);
-
-    row.append(
-      name,
-      count,
-      makeButton("inc", "Increment " + habit.name, "+", () => incrementHabit(habit.id)),
-      makeButton("reset", "Reset " + habit.name, "↺", () => resetHabit(habit.id)),
-      // No swipe-to-delete in a browser, so deleting gets an explicit button.
-      makeButton("del", "Delete " + habit.name, "×", () => {
+  // Deleting is only offered in edit mode, away from the buttons that get tapped every day.
+  const slots = editing
+    ? [
+      ...makeMoveButtons(item, index, total),
+      makeButton("del", "Delete " + habit.name, "\u00d7", () => {
         if (confirm("Delete \"" + habit.name + "\"?")) {
           deleteHabit(habit.id);
         }
-      })
-    );
-    listEl.append(row);
+      }),
+    ]
+    : [
+      makeButton("inc", "Increment " + habit.name, "+", () => incrementHabit(habit.id)),
+      makeButton("reset", "Reset " + habit.name, "\u21ba", () => resetHabit(habit.id)),
+      makeSpacer(),
+    ];
+  row.append(name, count, ...slots);
+  return row;
+}
+
+// Everything on the list in the order it is shown: built-in habits and the person's own. Ids that
+// are in the saved order come first, in that order; anything not in it (a habit added since) goes
+// after them in its natural place, and ids of habits that no longer exist are simply ignored.
+function orderedItems() {
+  const items = [];
+  if (nutritionLoaded) {
+    for (const auto of AUTO_HABITS) {
+      items.push({ id: "auto:" + auto.field, auto: auto });
+    }
   }
+  for (const habit of habits) {
+    items.push({ id: habit.id, habit: habit });
+  }
+  const position = new Map(habitOrder.map((id, index) => [id, index]));
+  return items
+    .map((item, natural) => ({ item: item, natural: natural }))
+    .sort((a, b) => {
+      const pa = position.has(a.item.id) ? position.get(a.item.id) : Infinity;
+      const pb = position.has(b.item.id) ? position.get(b.item.id) : Infinity;
+      if (pa !== pb) {
+        return pa < pb ? -1 : 1;
+      }
+      return a.natural - b.natural;
+    })
+    .map((entry) => entry.item);
+}
+
+// Swaps a row with its neighbour and saves the whole new order. Saving the full list (not just the
+// two swapped ids) also settles the position of anything that was not in the saved order yet.
+function moveItem(id, delta) {
+  const items = orderedItems();
+  const index = items.findIndex((item) => item.id === id);
+  const target = index + delta;
+  if (index < 0 || target < 0 || target >= items.length) {
+    return;
+  }
+  [items[index], items[target]] = [items[target], items[index]];
+  habitOrder = items.map((item) => item.id);
+  saves.track(setDoc(settingsRef(), { habitOrder: habitOrder }, { merge: true }));
+  render();
+
+  // keep the keyboard focus on the row that moved, so it can be nudged again
+  const same = listEl.querySelector('[data-move="' + id + (delta < 0 ? ":up" : ":down") + '"]');
+  const other = listEl.querySelector('[data-move="' + id + (delta < 0 ? ":down" : ":up") + '"]');
+  const focusTarget = same && !same.disabled ? same : other;
+  if (focusTarget) {
+    focusTarget.focus();
+    focusTarget.scrollIntoView({ block: "nearest" });
+  }
+}
+
+editToggleEl.addEventListener("click", () => {
+  editing = !editing;
+  render();
+});
+
+function render() {
+  // The list is rebuilt on every change, including the echo of our own save. Remember which move
+  // button had the keyboard focus, so it keeps it.
+  const focusedMove = document.activeElement && listEl.contains(document.activeElement)
+    ? document.activeElement.dataset.move : undefined;
+  listEl.replaceChildren();
+
+  const items = orderedItems();
+  // with nothing on the list there is nothing to edit
+  if (items.length === 0) {
+    editing = false;
+  }
+  editToggleEl.hidden = items.length === 0;
+  editToggleEl.textContent = editing ? "Done" : "Edit";
+
+  items.forEach((item, index) => {
+    listEl.append(item.auto ? makeAutoRow(item, index, items.length) : makeHabitRow(item, index, items.length));
+  });
 
   emptyEl.hidden = habits.length > 0;
+
+  if (focusedMove !== undefined) {
+    const again = listEl.querySelector('[data-move="' + focusedMove + '"]');
+    if (again && !again.disabled) {
+      again.focus();
+    }
+  }
 }
 
 formEl.addEventListener("submit", (event) => {
@@ -434,6 +543,8 @@ initGate({
         targetDialogEl.close();
       }
       activeAuto = null;
+      habitOrder = [];
+      editing = false;
       settings = defaultSettings();
       userId = null;
       // drop the data from memory and screen when signing out

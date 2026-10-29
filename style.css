@@ -189,6 +189,11 @@ button.icon {
 button.icon:hover { background: var(--surface-3); }
 button.del:hover { background: var(--danger-soft); color: var(--danger); }
 button.icon:active { opacity: 0.6; }
+button.icon:disabled { opacity: 0.25; cursor: default; }
+button.icon:disabled:hover { background: var(--surface-2); }
+
+/* the Edit / Done button sits at the right, just above the list */
+.list-tools { display: flex; justify-content: flex-end; margin: 0 0 8px; }
 
 button.inc,
 button.add {
