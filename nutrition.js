@@ -2,8 +2,8 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, limit, onSnapshot, getDoc, getDocs, getDocFromCache, setDoc, writeBatch,
   increment,
-} from "./firebase.js?v=35";
-import { drawLineChart } from "./chart.js?v=35";
+} from "./firebase.js?v=36";
+import { drawLineChart } from "./chart.js?v=36";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "nutrition.log";

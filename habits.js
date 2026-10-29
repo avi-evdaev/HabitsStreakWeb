@@ -2,7 +2,7 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=35";
+} from "./firebase.js?v=36";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
@@ -345,8 +345,9 @@ function makeButton(className, label, text, onClick) {
   return button;
 }
 
-// Every row has the same columns: name, number, then three button slots. That keeps the numbers of
-// all rows in one column, whatever the row holds.
+// Every row has the same columns: name, number, then the button slots, flush against the right edge:
+// two in everyday use (+ and reset), three in edit mode. A row that has no buttons keeps empty
+// spacers of the same size, so the numbers of all rows stay in one column.
 function makeSpacer() {
   const slot = document.createElement("span");
   slot.className = "slot";
@@ -387,7 +388,7 @@ function makeAutoRow(item, index, total) {
 
   const slots = editing
     ? [...makeMoveButtons(item, index, total), makeButton("edit", auto.changeLabel, "\u270e", () => openTargetDialog(auto))]
-    : [makeSpacer(), makeSpacer(), makeSpacer()];
+    : [makeSpacer(), makeSpacer()];
   row.append(name, count, ...slots, note);
   return row;
 }
@@ -420,7 +421,6 @@ function makeHabitRow(item, index, total) {
     : [
       makeButton("inc", "Increment " + habit.name, "+", () => incrementHabit(habit.id)),
       makeButton("reset", "Reset " + habit.name, "\u21ba", () => resetHabit(habit.id)),
-      makeSpacer(),
     ];
   row.append(name, count, ...slots);
   return row;

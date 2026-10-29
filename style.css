@@ -139,8 +139,16 @@ li + li { border-top: 1px solid var(--line); }
 li { transition: background-color 0.5s ease; }
 
 /* the built-in habit: same row, but no buttons, and a quiet line saying where its number comes from */
-/* an empty button-sized space, so a built-in row keeps the same columns as a normal habit */
+/* an empty button-sized space, so a row without buttons keeps the same columns as a normal habit */
 .slot { flex: none; width: var(--cell); height: var(--cell); }
+
+/* The buttons on a habit row are smaller than the page's usual 48px controls, so a row stays
+   compact and the habit's name gets more room. The number cell stays wide enough for 3 digits. */
+#habit-list { --row-button: 36px; }
+#habit-list button.icon,
+#habit-list .slot { width: var(--row-button); height: var(--row-button); font-size: 1.1rem; }
+#habit-list .count { width: 44px; height: var(--row-button); }
+#habit-list li { gap: 6px; padding: 8px 10px; }
 li.auto { flex-wrap: wrap; row-gap: 0; }
 .auto-note {
   flex: 0 0 100%;
