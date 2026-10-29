@@ -1,68 +1,42 @@
+/* PROductive: true black, hairlines, sharp corners. The palette is Apple's dark-interface palette. */
 :root {
-  /* grey is the main color; white cards, near-black text and blue accents sit on top of it */
-  --bg: #dcdde1;
-  --surface: #ffffff;
-  --surface-2: #eceef1;
-  --ink: #000000;
-  --muted: #555a64;
-  --line: #c3c6cd;
-  --line-strong: #a3a8b1;
-  --accent: #2563eb;
-  --accent-line: #1d4ed8;
-  --accent-soft: rgba(37, 99, 235, 0.12);
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --surface-3: #3a3a3c;
+  --ink: #ffffff;
+  --muted: #98989f;
+  --faint: #636366;
+  --line: #2c2c2e;
+  --line-strong: #48484a;
+  --accent: #0071e3;          /* fills: white text on it passes contrast */
+  --accent-line: #2997ff;     /* blue text, lines and chart on black */
+  --accent-soft: rgba(41, 151, 255, 0.16);
   --on-accent: #ffffff;
-  --danger: #c42b1c;
-  --danger-soft: rgba(196, 43, 28, 0.1);
-  /* dark-grey panels and secondary buttons: white text on dark grey */
-  --panel: #2c2e33;
-  --panel-ink: #ffffff;
-  --panel-muted: #c9ccd2;
-  --btn2-bg: #2c2e33;
-  --btn2-border: #2c2e33;
-  --btn2-ink: #ffffff;
-  --btn2-hover: #3d4047;
+  --danger: #ff453a;
+  --danger-soft: rgba(255, 69, 58, 0.14);
   /* one height for every input and button, so nothing looks bigger than its neighbour */
   --cell: 48px;
+  --ease: 0.16s ease;
   /* An old-book serif for the quotes: Baskerville ships with macOS and iOS */
   --book: Baskerville, "Baskerville Old Face", "Libre Baskerville", Georgia, "Times New Roman", serif;
-  color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* dark grey rather than black: high contrast without the glare of white on pure black */
-    --bg: #24262a;
-    --surface: #2f3237;
-    --surface-2: #383b41;
-    --ink: #eceef2;
-    --muted: #a2a7b0;
-    --line: #3f434a;
-    --line-strong: #565b64;
-    /* the button blue stays the same; text, lines and chart use a lighter blue to read on grey */
-    --accent-line: #7aa7ff;
-    --accent-soft: rgba(122, 167, 255, 0.16);
-    --danger: #ff7a70;
-    --danger-soft: rgba(255, 122, 112, 0.14);
-    /* on dark grey the panels go darker than the page instead */
-    --panel: #17181b;
-    --panel-ink: #eceef2;
-    --panel-muted: #a9adb6;
-    --btn2-bg: #17181b;
-    --btn2-border: #4a4e56;
-    --btn2-ink: #eceef2;
-    --btn2-hover: #202226;
-  }
+  /* dark only: the app is black by design */
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
-  /* iOS gives inputs and buttons rounded corners by default; this keeps every corner square */
+  /* iOS gives inputs and buttons rounded corners by default; this keeps every corner sharp */
   border-radius: 0;
   -webkit-appearance: none;
   appearance: none;
   /* no double-tap-to-zoom on iPhone; scrolling and pinch-zoom still work */
   touch-action: manipulation;
 }
+
+::selection { background: var(--accent); color: #ffffff; }
+
+html { background: var(--bg); }
 
 body {
   margin: 0;
@@ -79,17 +53,27 @@ body {
 main {
   max-width: 520px;
   margin: 0 auto;
-  padding: 24px 20px 32px;
+  padding: 28px 20px 40px;
+  animation: rise 0.28s ease-out;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  main { animation: none; }
+  * { transition: none !important; }
 }
 
-/* The app bar: full width, pure black in both themes, and it stays at the top while you scroll.
-   It also reaches under the iPhone status bar, which the black theme-color blends into. */
+/* The app bar: full width, black, a single hairline underneath, and it stays at the top while you
+   scroll. It also reaches under the iPhone status bar, which the black theme-color blends into. */
 .bar {
   position: sticky;
   top: 0;
   z-index: 10;
   background: #000000;
   color: #ffffff;
+  border-bottom: 1px solid var(--line);
   padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
 }
 
@@ -122,31 +106,39 @@ main {
   margin-left: -14px;
   color: #ffffff;
 }
-.back-arrow:hover { background: rgba(255, 255, 255, 0.14); }
+.back-arrow { transition: background-color var(--ease); }
+.back-arrow:hover { background: var(--surface-2); }
 .back-arrow:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
 
 .bar h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
-ul { list-style: none; margin: 0; padding: 0; }
+/* ---------- lists: one block with hairlines between rows, like an iOS grouped list ---------- */
+
+ul {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+ul:empty { display: none; }
 
 li {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
-  padding: 8px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  padding: 8px 12px;
 }
+li + li { border-top: 1px solid var(--line); }
 
 .name {
   flex: 1;
-  padding: 0 6px;
+  padding: 0 4px;
   font-weight: 500;
   overflow-wrap: anywhere;
 }
@@ -158,7 +150,6 @@ button.icon {
   width: var(--cell);
   height: var(--cell);
   flex-shrink: 0;
-  border: 1px solid var(--line-strong);
 }
 
 .count {
@@ -171,26 +162,27 @@ button.icon {
 }
 
 button.icon {
-  background: transparent;
-  color: var(--muted);
+  border: 0;
+  background: var(--surface-2);
+  color: var(--ink);
   font: inherit;
   font-size: 1.3rem;
   line-height: 1;
   cursor: pointer;
+  transition: background-color var(--ease), color var(--ease), opacity var(--ease);
 }
-button.icon:hover { background: var(--surface-2); color: var(--ink); }
-button.del:hover { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
-button.icon:active { opacity: 0.7; }
+button.icon:hover { background: var(--surface-3); }
+button.del:hover { background: var(--danger-soft); color: var(--danger); }
+button.icon:active { opacity: 0.6; }
 
 button.inc,
 button.add {
   background: var(--accent);
-  border-color: var(--accent);
   color: var(--on-accent);
   font-weight: 500;
 }
 button.inc:hover,
-button.add:hover { background: var(--accent); color: var(--on-accent); filter: brightness(0.92); }
+button.add:hover { background: var(--accent); filter: brightness(1.15); }
 
 button.icon:focus-visible,
 input:focus-visible,
@@ -198,8 +190,8 @@ textarea:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 
 
 form {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 8px;
+  margin-top: 20px;
 }
 
 input {
@@ -213,8 +205,10 @@ input {
   font: inherit;
   /* iOS Safari zooms the page on focus if the input font is under 16px */
   font-size: 16px;
+  transition: border-color var(--ease);
 }
-input::placeholder { color: var(--muted); }
+input:focus { border-color: var(--accent-line); }
+input::placeholder { color: var(--faint); }
 
 .empty {
   margin: 0 0 12px;
@@ -235,56 +229,64 @@ input::placeholder { color: var(--muted); }
 
 /* ---------- home ---------- */
 
+/* one block, one row per app, hairlines between them: the name on the left, a chevron on the right */
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
 }
 
-/* one wide dark-grey button per app: the name on the left, a blue arrow on the right */
 .tile {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 60px;
+  min-height: 64px;
   padding: 0 18px;
-  background: var(--panel);
-  border: 1px solid var(--panel);
-  color: var(--panel-ink);
+  color: var(--ink);
   text-decoration: none;
+  transition: background-color var(--ease);
 }
-.tile:hover { background: var(--btn2-hover); }
-.tile:active { opacity: 0.85; }
-.tile:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+.tile + .tile { border-top: 1px solid var(--line); }
+.tile:hover { background: var(--surface-2); }
+.tile:active { background: var(--surface-3); }
+.tile:focus-visible { outline: 2px solid var(--accent-line); outline-offset: -2px; }
 
-.tile-name { font-size: 1.05rem; font-weight: 500; overflow-wrap: anywhere; }
+.tile-name { font-size: 1.1rem; font-weight: 500; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 
-/* a lighter blue than the buttons', so the arrow reads on dark grey */
-.tile-arrow { margin-left: 12px; color: #7aa7ff; font-size: 1.4rem; line-height: 1; }
+.tile-arrow {
+  margin-left: 12px;
+  color: var(--faint);
+  font-size: 1.9rem;
+  font-weight: 300;
+  line-height: 1;
+  transition: color var(--ease), transform var(--ease);
+}
+.tile:hover .tile-arrow { color: var(--accent-line); transform: translateX(3px); }
 
-/* ---------- pomodoro ---------- */
+/* ---------- buttons ---------- */
 
 button.block {
-  background: var(--btn2-bg);
-  border: 1px solid var(--btn2-border);
-  color: var(--btn2-ink);
+  border: 0;
+  background: var(--surface-2);
+  color: var(--ink);
   font: inherit;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
   cursor: pointer;
+  transition: background-color var(--ease), opacity var(--ease), filter var(--ease);
 }
-button.block:hover { background: var(--btn2-hover); }
-button.block.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-button.block.primary:hover { background: var(--accent); filter: brightness(0.92); }
-button.block:active { opacity: 0.85; }
+button.block:hover { background: var(--surface-3); }
+button.block.primary { background: var(--accent); color: var(--on-accent); }
+button.block.primary:hover { background: var(--accent); filter: brightness(1.15); }
+button.block:active { opacity: 0.7; }
 button.block:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
 
 button.big {
   display: block;
   width: 100%;
   height: 64px;
-  font-size: 1.25rem;
-  letter-spacing: 0.01em;
+  font-size: 1.2rem;
 }
 
 button.wide {
@@ -292,6 +294,8 @@ button.wide {
   height: var(--cell);
   font-size: 1rem;
 }
+
+/* ---------- pomodoro ---------- */
 
 .config { margin-top: 32px; }
 
@@ -304,9 +308,9 @@ button.wide {
 .chart-title,
 .phase,
 .stat-label {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -323,32 +327,33 @@ input[type="number"] { -moz-appearance: textfield; }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-.phase { margin: 0 0 12px; }
+.phase { margin: 0 0 8px; }
 
+/* huge thin digits straight on black, held between two hairlines */
 .clock {
-  padding: 32px 8px;
-  background: var(--panel);
-  border: 1px solid var(--panel);
-  color: var(--panel-ink);
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   text-align: center;
   line-height: 1;
   /* scales with the screen so "25:00" fills a phone, and "180:00" still fits */
-  font-size: clamp(3.6rem, 22vw, 9rem);
-  font-weight: 300;
-  letter-spacing: -0.02em;
+  font-size: clamp(4rem, 26vw, 9.5rem);
+  font-weight: 200;
+  letter-spacing: -0.04em;
   /* equal-width digits stop the clock jittering as it counts */
   font-variant-numeric: tabular-nums;
+  transition: color 0.3s ease;
 }
-/* a blue clock marks a break; an inverted one marks the end */
-.clock.break { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.clock.done { background: #000000; border-color: #000000; color: #ffffff; }
+/* blue digits mark a break; heavy white ones mark the end */
+.clock.break { color: var(--accent-line); }
+.clock.done { font-weight: 600; letter-spacing: -0.02em; }
 
 .pips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-.pip { width: 20px; height: 20px; border: 1px solid var(--line-strong); }
+.pip { width: 16px; height: 16px; border: 1px solid var(--line-strong); }
 .pip.done { background: var(--ink); border-color: var(--ink); }
-.pip.current { background: var(--accent); border-color: var(--accent); }
+.pip.current { background: var(--accent-line); border-color: var(--accent-line); }
 
-.controls { display: flex; gap: 12px; margin-top: 24px; }
+.controls { display: flex; gap: 8px; margin-top: 24px; }
 
 /* ---------- nutrition table ---------- */
 
@@ -376,10 +381,10 @@ thead th {
   z-index: 1;
   padding: 12px 8px;
   background: #000000;
-  color: #d4d6db;
-  font-size: 0.72rem;
+  color: var(--muted);
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -410,8 +415,8 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 .stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 24px;
+  gap: 8px;
+  margin-top: 20px;
 }
 
 .stat {
@@ -422,20 +427,21 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
   background: var(--surface);
   border: 1px solid var(--line);
 }
-.stat-label { font-size: 0.65rem; }
+.stat-label { font-size: 0.62rem; }
 
 .stat-value {
   /* shrinks on narrow phones so "16 / 18" stays on one line */
   font-size: clamp(1rem, 5vw, 1.6rem);
   white-space: nowrap;
   font-weight: 600;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
 /* ---------- nutrition chart ---------- */
 
 .chart-box {
-  margin-top: 24px;
+  margin-top: 20px;
   padding: 14px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -447,7 +453,7 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 #chart text { fill: var(--muted); font-size: 11px; font-weight: 500; }
 #chart text.placeholder { font-size: 13px; }
 #chart .axis { stroke: var(--line-strong); stroke-width: 1; }
-#chart .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 3; }
+#chart .grid { stroke: var(--line); stroke-width: 1; }
 #chart .line { fill: none; stroke-linejoin: miter; stroke-linecap: butt; stroke-width: 2; }
 #chart .line.calories { stroke: var(--ink); }
 #chart .line.protein { stroke: var(--accent-line); }
@@ -471,20 +477,16 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 .swatch.calories { background: var(--ink); }
 .swatch.protein { background: var(--accent-line); }
 
-.chart-note { margin: 8px 0 0; font-size: 0.75rem; color: var(--muted); }
+.chart-note { margin: 8px 0 0; font-size: 0.75rem; color: var(--faint); }
 
 /* ---------- quotes ---------- */
 
 .featured {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   padding: 18px 18px 16px;
-  background: var(--panel);
-  border: 1px solid var(--panel);
-  color: var(--panel-ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
 }
-.featured .featured-quote { border-color: #5c6068; }
-.featured .featured-quote::before { color: #8fb4ff; }
-.featured .quote-author { color: var(--panel-muted); }
 
 .featured-empty {
   margin: 0;
@@ -492,7 +494,7 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
   font-style: italic;
   font-size: 1.15rem;
   text-align: center;
-  color: var(--panel-muted);
+  color: var(--muted);
 }
 
 /* double rules above and below, like the ornaments of a printed page */
@@ -531,9 +533,10 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
   font-variant: small-caps;
   letter-spacing: 0.08em;
   text-align: right;
+  color: var(--muted);
 }
 .featured-quote .quote-author::before { content: "\2014\00a0"; }
-.quote-body .quote-author { text-align: left; color: var(--muted); }
+.quote-body .quote-author { text-align: left; }
 .quote-body .quote-author::before { content: "\2014\00a0"; }
 
 .home-quote { margin: 32px 0 0; }
@@ -541,7 +544,7 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 
 #another { display: block; width: 100%; height: var(--cell); font-size: 1rem; }
 
-.quote-form { display: flex; flex-direction: column; gap: 12px; margin-top: 0; }
+.quote-form { display: flex; flex-direction: column; gap: 8px; margin-top: 0; }
 .section-title { margin: 28px 0 12px; }
 .quote-form textarea {
   width: 100%;
@@ -553,8 +556,10 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
   /* iOS Safari zooms the page on focus if the font is under 16px */
   font-size: 16px;
   resize: vertical;
+  transition: border-color var(--ease);
 }
-.quote-form textarea::placeholder { color: var(--muted); }
+.quote-form textarea:focus { border-color: var(--accent-line); }
+.quote-form textarea::placeholder { color: var(--faint); }
 .quote-form input { flex: none; width: 100%; }
 .quote-form button.block { width: 100%; flex: none; }
 
@@ -609,22 +614,24 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
 
 button.small {
   min-height: 44px;
-  padding: 0 14px;
-  background: var(--btn2-bg);
-  border: 1px solid var(--btn2-border);
-  color: var(--btn2-ink);
+  padding: 0 16px;
+  border: 0;
+  background: var(--surface-2);
+  color: var(--ink);
   font: inherit;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
+  transition: background-color var(--ease), opacity var(--ease);
 }
-button.small:hover { background: var(--btn2-hover); }
+button.small:hover { background: var(--surface-3); }
+button.small:active { opacity: 0.7; }
 
 #build {
   margin-top: 32px;
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--faint);
 }
 
 [hidden] { display: none !important; }

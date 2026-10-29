@@ -1,7 +1,7 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, limit, onSnapshot, getDoc, getDocs, getDocFromCache, setDoc, writeBatch,
-} from "./firebase.js?v=28";
+} from "./firebase.js?v=29";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "nutrition.log";
