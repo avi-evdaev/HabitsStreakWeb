@@ -11,7 +11,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
 export {
-  collection, doc, query, orderBy, limit, onSnapshot, getDoc, getDocs, getDocFromCache, getDocsFromCache, addDoc, setDoc, updateDoc,
+  collection, doc, query, where, orderBy, limit, onSnapshot, getDoc, getDocs, getDocFromCache, getDocsFromCache, addDoc, setDoc, updateDoc,
   deleteDoc, increment, writeBatch,
 } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 

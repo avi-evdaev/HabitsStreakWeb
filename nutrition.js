@@ -1,10 +1,10 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
-  collection, doc, query, limit, onSnapshot, getDoc, getDocs, getDocFromCache, setDoc, writeBatch,
+  collection, doc, query, where, limit, onSnapshot, getDoc, getDocs, getDocFromCache, setDoc, writeBatch,
   increment,
-} from "./firebase.js?v=37";
-import { drawLineChart } from "./chart.js?v=37";
-import { GOAL_DEFAULTS, readGoals } from "./goals.js?v=37";
+} from "./firebase.js?v=38";
+import { drawLineChart } from "./chart.js?v=38";
+import { GOAL_DEFAULTS, readGoals } from "./goals.js?v=38";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "nutrition.log";
@@ -39,11 +39,22 @@ const logCaloriesEl = document.getElementById("log-calories");
 const logProteinEl = document.getElementById("log-protein");
 const logErrorEl = document.getElementById("log-error");
 const logCancelEl = document.getElementById("log-cancel");
+const historyDialogEl = document.getElementById("history-dialog");
+const historyTitleEl = document.getElementById("history-title");
+const historyTotalEl = document.getElementById("history-total");
+const historyListEl = document.getElementById("history-list");
+const historyEmptyEl = document.getElementById("history-empty");
+const historyErrorEl = document.getElementById("history-error");
+const historyCloseEl = document.getElementById("history-close");
 
 // one document per day, named by its date key; fields: calories, protein (number or null)
 let userId = null;  // set when sign-in completes; everything lives under users/<id>/
 const nutritionCollection = () => collection(db, "users", userId, "nutrition");
 const nutritionDoc = (key) => doc(db, "users", userId, "nutrition", key);
+// One document per change to a day's numbers, so the (i) button can show how a total came about:
+//   { day, kind: "log", calories, protein, at }          a "Log food" action (amounts added, or null)
+//   { day, kind: "edit", field, from, to, at }           a manual edit of one cell (null = empty)
+const historyCollection = () => collection(db, "users", userId, "nutritionHistory");
 
 // Every account has its own first day. A brand-new account starts on the day it first opens
 // this page; one that already has entries keeps the original start date. The choice is saved
@@ -186,6 +197,9 @@ function sendDraft(id) {
   clearTimeout(draft.timer);
   drafts.delete(id);
 
+  // read before our copy is overwritten below: this is the "from" of the history entry
+  const previous = savedAmount(draft.key, draft.field);
+
   // Update our copy first so the stats and the field don't flash the old value while the
   // database round-trips.
   const entry = log[draft.key] || { calories: null, protein: null };
@@ -193,8 +207,14 @@ function sendDraft(id) {
   log[draft.key] = entry;
 
   // Write only the changed field (merge), so editing calories can never wipe protein that
-  // another device just saved.
-  saves.track(setDoc(nutritionDoc(draft.key), { [draft.field]: draft.value }, { merge: true }));
+  // another device just saved. The history entry goes in the same batch, so the total and its
+  // history are saved together or not at all.
+  const batch = writeBatch(db);
+  batch.set(nutritionDoc(draft.key), { [draft.field]: draft.value }, { merge: true });
+  batch.set(doc(historyCollection()), {
+    day: draft.key, kind: "edit", field: draft.field, from: previous, to: draft.value, at: Date.now(),
+  });
+  saves.track(batch.commit());
 }
 
 function queueSave(key, field, value, immediately) {
@@ -300,6 +320,13 @@ function renderTable() {
     dateCell.scope = "row";
     dateCell.className = "date";
     dateCell.textContent = label;
+    const info = document.createElement("button");
+    info.type = "button";
+    info.className = "info";
+    info.dataset.key = key;
+    info.setAttribute("aria-label", "How " + label + " was calculated");
+    info.textContent = "i";
+    dateCell.append(info);
 
     row.append(dateCell,
                makeAmountCell(key, label, "calories"),
@@ -478,7 +505,15 @@ function addToDay(key, added) {
     entry[field] = (entry[field] === null ? 0 : entry[field]) + value;
   }
   log[key] = entry;
-  saves.track(setDoc(nutritionDoc(key), data, { merge: true }));
+  const batch = writeBatch(db);
+  batch.set(nutritionDoc(key), data, { merge: true });
+  batch.set(doc(historyCollection()), {
+    day: key, kind: "log",
+    calories: added.calories === undefined ? null : added.calories,
+    protein: added.protein === undefined ? null : added.protein,
+    at: Date.now(),
+  });
+  saves.track(batch.commit());
   syncInputs();
   renderStats();
 }
@@ -520,6 +555,97 @@ logCancelEl.addEventListener("click", () => logDialogEl.close());
 logDialogEl.addEventListener("click", (event) => {
   if (event.target === logDialogEl) {
     logDialogEl.close();
+  }
+});
+
+/* ---------- history: how a day's numbers came about ---------- */
+
+const UNIT = { calories: "kcal", protein: "g" };
+
+// Turns a stored history document into { kind, at, ... }, or null if it is malformed.
+function toEvent(data) {
+  if (data === null || typeof data !== "object" || !Number.isFinite(data.at)) {
+    return null;
+  }
+  const isAmount = (value) => value === null || Number.isFinite(value);
+  if (data.kind === "log" && isAmount(data.calories) && isAmount(data.protein)) {
+    return { kind: "log", at: data.at, calories: data.calories, protein: data.protein };
+  }
+  if (data.kind === "edit" && FIELDS.includes(data.field) && isAmount(data.from) && isAmount(data.to)) {
+    return { kind: "edit", at: data.at, field: data.field, from: data.from, to: data.to };
+  }
+  return null;
+}
+
+function describeEvent(event) {
+  if (event.kind === "log") {
+    const parts = [];
+    for (const field of FIELDS) {
+      if (event[field] !== null) {
+        parts.push("+" + event[field] + " " + UNIT[field]);
+      }
+    }
+    return "Logged food: " + parts.join(", ");
+  }
+  const show = (value) => (value === null ? "empty" : String(value));
+  return "Edited " + event.field + ": " + show(event.from) + " → " + show(event.to) + " " + UNIT[event.field];
+}
+
+function formatTime(timestamp) {
+  return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+async function openHistory(key) {
+  historyTitleEl.textContent = labelFromKey(key);
+  const calories = amountOf(key, "calories");
+  const protein = amountOf(key, "protein");
+  historyTotalEl.textContent = "Total: " + (calories === null ? "—" : calories + " kcal") + ", " +
+                               (protein === null ? "—" : protein + " g protein");
+  historyListEl.replaceChildren();
+  historyEmptyEl.hidden = true;
+  historyErrorEl.hidden = true;
+  historyDialogEl.showModal();
+
+  // Only an equality filter, so no extra database index is needed; the order is set here.
+  let events;
+  try {
+    const snapshot = await getDocs(query(historyCollection(), where("day", "==", key)));
+    events = snapshot.docs.map((snap) => toEvent(snap.data())).filter((event) => event !== null)
+      .sort((a, b) => a.at - b.at);
+  } catch (err) {
+    historyErrorEl.textContent = typeof err === "string" ? err : describeFirestoreError(err);
+    historyErrorEl.hidden = false;
+    return;
+  }
+  // the person may have closed the box or signed out while this was loading
+  if (!historyDialogEl.open || userId === null) {
+    return;
+  }
+  for (const event of events) {
+    const row = document.createElement("li");
+    const time = document.createElement("span");
+    time.className = "history-time";
+    time.textContent = formatTime(event.at);
+    const text = document.createElement("span");
+    text.textContent = describeEvent(event);
+    row.append(time, text);
+    historyListEl.append(row);
+  }
+  // days from before history was recorded have a total but no events
+  historyEmptyEl.hidden = events.length > 0;
+}
+
+rowsEl.addEventListener("click", (event) => {
+  const button = event.target.closest("button.info");
+  if (button) {
+    openHistory(button.dataset.key).catch(showError);
+  }
+});
+
+historyCloseEl.addEventListener("click", () => historyDialogEl.close());
+historyDialogEl.addEventListener("click", (event) => {
+  if (event.target === historyDialogEl) {
+    historyDialogEl.close();
   }
 });
 
@@ -652,6 +778,9 @@ initGate({
       chartEl.replaceChildren();
       if (logDialogEl.open) {
         logDialogEl.close();
+      }
+      if (historyDialogEl.open) {
+        historyDialogEl.close();
       }
     };
   },
