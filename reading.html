@@ -11,30 +11,25 @@
   <!-- start downloading the Firebase files at once instead of one step after another -->
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com">
-  <link rel="modulepreload" href="firebase.js?v=40">
+  <link rel="modulepreload" href="firebase.js?v=41">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js">
-  <link rel="modulepreload" href="reading.js?v=40">
-  <link rel="modulepreload" href="chart.js?v=40">
-  <link rel="icon" type="image/png" href="favicon.png?v=40">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=40">
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="modulepreload" href="reading.js?v=41">
+  <link rel="modulepreload" href="chart.js?v=41">
+  <link rel="icon" type="image/png" href="favicon.png?v=41">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=41">
+  <link rel="stylesheet" href="style.css?v=41">
 </head>
-<body class="s-lit">
-  <header class="bar">
-    <div class="bar-inner">
-      <a class="back-arrow" href="./" aria-label="Back to home"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg></a>
-      <a class="logo" href="./"><img src="logo.png?v=40" alt="PROductive home" width="44" height="44"></a>
-      <h1>Reading Session</h1>
-    </div>
-  </header>
+<body class="s-lit" data-section="lit">
   <main>
+    <header class="page-head"><div><p class="eyebrow">Literature</p><h1>Reading Session</h1></div></header>
 
     <!-- shown until Firebase reports whether someone is signed in, so the page is never blank -->
     <p id="checking" class="gate-text">Checking sign-in&hellip;</p>
 
     <section id="gate" class="gate" hidden>
+      <img class="gate-logo" src="logo.png?v=41" width="96" height="96" alt="">
       <p class="gate-text">Sign in to see your reading.</p>
       <button id="sign-in" type="button" class="block primary">Sign in with Google</button>
       <p id="gate-message" class="error" role="alert" hidden></p>
@@ -106,16 +101,13 @@
         </form>
       </dialog>
 
-      <div class="session">
-        <span id="status">Loading&hellip;</span>
-        <button id="sign-out" type="button" class="small">Sign out</button>
-      </div>
     </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 40 &middot; 2026-11-04 09:50</footer>
+    <footer id="build">Build 41 &middot; 2026-11-04 10:00</footer>
   </main>
 
-  <script type="module" src="reading.js?v=40"></script>
+  <script src="nav.js?v=41"></script>
+  <script type="module" src="reading.js?v=41"></script>
 </body>
 </html>

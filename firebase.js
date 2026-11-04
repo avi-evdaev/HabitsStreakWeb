@@ -70,6 +70,23 @@ function describeAuthError(err) {
   }
 }
 
+// The page shell (nav.js) shows the tab bar and the account sheet only while someone is signed in.
+function showAccount(user) {
+  document.body.classList.toggle("signed-in", user !== null);
+  const label = user === null ? "" : (user.displayName || user.email || "");
+  const nameEl = document.getElementById("account-name");
+  const emailEl = document.getElementById("account-email");
+  if (nameEl) {
+    nameEl.textContent = label;
+  }
+  if (emailEl) {
+    emailEl.textContent = user === null ? "" : (user.email || "");
+  }
+  for (const avatar of document.querySelectorAll(".avatar")) {
+    avatar.textContent = label.trim().charAt(0).toUpperCase();
+  }
+}
+
 // Shows either the sign-in screen or the page content, and runs onSignedIn(user) whenever a
 // user is signed in. onSignedIn may return a cleanup function; it runs on sign-out so the page
 // stops listening to the database and drops the data it was holding.
@@ -125,6 +142,7 @@ export function initGate({ onSignedIn }) {
     checkingEl.hidden = true;
     gateEl.hidden = user !== null;
     contentEl.hidden = user === null;
+    showAccount(user);
     if (user !== null) {
       cleanup = onSignedIn(user) || null;
     }

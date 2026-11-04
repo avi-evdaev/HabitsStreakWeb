@@ -21,6 +21,7 @@
   --accent: #00f5ff;          /* fills */
   --accent-line: #00f5ff;     /* text, lines and chart on the dark background */
   --accent-soft: rgba(0, 245, 255, 0.14);
+  --accent-edge: rgba(0, 245, 255, 0.42);
   --on-accent: #00181a;
 
   --danger: #ff453a;
@@ -63,7 +64,8 @@ body {
 main {
   max-width: 520px;
   margin: 0 auto;
-  padding: 28px 20px 40px;
+  /* the bottom padding keeps the last thing on the page clear of the floating tab bar */
+  padding: calc(env(safe-area-inset-top) + 22px) 20px 130px;
   animation: rise 0.28s ease-out;
 }
 @keyframes rise {
@@ -73,58 +75,6 @@ main {
 @media (prefers-reduced-motion: reduce) {
   main { animation: none; }
   * { transition: none !important; }
-}
-
-/* The app bar: full width, black, a single hairline underneath, and it stays at the top while you
-   scroll. It also reaches under the iPhone status bar, which the black theme-color blends into. */
-.bar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--bg);
-  color: #ffffff;
-  border-bottom: 1px solid var(--line);
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
-}
-
-/* same width as the page column below, so the logo lines up with the content */
-.bar-inner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 10px 20px;
-}
-
-.logo { display: block; flex: none; line-height: 0; }
-.logo img { display: block; width: 44px; height: 44px; }
-.logo:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
-
-/* The way back to the home page: a plain arrow at the left end of the bar. The home page has an
-   empty slot of the same size, so the logo and title never move between pages. */
-.back-arrow,
-.back-slot {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  /* 44px is Apple's minimum comfortable tap target */
-  width: 44px;
-  height: 44px;
-  /* pulls the arrow's glyph (not its tap box) in line with the page's left edge */
-  margin-left: -14px;
-  color: #ffffff;
-}
-.back-arrow { transition: background-color var(--ease); }
-.back-arrow:hover { background: var(--surface-2); }
-.back-arrow:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
-
-.bar h1 {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
 }
 
 /* ---------- lists: one block with hairlines between rows, like an iOS grouped list ---------- */
@@ -265,43 +215,6 @@ input::placeholder { color: var(--faint); }
   font-weight: 500;
 }
 
-/* ---------- home ---------- */
-
-/* one block, one row per app, hairlines between them: the name on the left, a chevron on the right */
-.menu {
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--line);
-}
-
-.tile {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 64px;
-  padding: 0 18px;
-  color: var(--ink);
-  text-decoration: none;
-  transition: background-color var(--ease);
-}
-.tile + .tile { border-top: 1px solid var(--line); }
-.tile:hover { background: var(--surface-2); }
-.tile:active { background: var(--surface-3); }
-.tile:focus-visible { outline: 2px solid var(--accent-line); outline-offset: -2px; }
-
-.tile-name { font-size: 1.1rem; font-weight: 500; letter-spacing: -0.01em; overflow-wrap: anywhere; }
-
-.tile-arrow {
-  margin-left: 12px;
-  color: var(--faint);
-  font-size: 1.9rem;
-  font-weight: 300;
-  line-height: 1;
-  transition: color var(--ease), transform var(--ease);
-}
-.tile:hover .tile-arrow { color: var(--accent-line); transform: translateX(3px); }
-
 /* ---------- buttons ---------- */
 
 button.block {
@@ -343,7 +256,6 @@ button.wide {
 .field label,
 .form-label,
 .section-title,
-.menu-title,
 .chart-title,
 .phase,
 .stat-label {
@@ -476,11 +388,6 @@ td input.invalid { background: var(--danger-soft); color: var(--danger); }
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
-
-/* ---------- home sections ---------- */
-
-.menu-section + .menu-section { margin-top: 28px; }
-.menu-title { margin: 0 0 10px; }
 
 /* ---------- macros guide ---------- */
 
@@ -806,26 +713,15 @@ button.small:active { opacity: 0.7; }
 
 /* ---------- the colour of each kind of page ---------- */
 
-.s-prod { --accent: var(--prod); --accent-line: var(--prod); --accent-soft: rgba(0, 245, 255, 0.14); --on-accent: #00181a; }
-.s-fit  { --accent: var(--fit);  --accent-line: var(--fit);  --accent-soft: rgba(57, 255, 20, 0.13); --on-accent: #041a02; }
-.s-lit  { --accent: var(--lit);  --accent-line: #bd82fb;     --accent-soft: rgba(168, 85, 247, 0.20); --on-accent: #12062a; }
-
-/* a coloured dot in front of each section name on the home page */
-.menu-title { display: flex; align-items: center; gap: 8px; }
-.menu-title::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-}
+.s-prod { --accent: var(--prod); --accent-line: var(--prod); --accent-soft: rgba(0, 245, 255, 0.14); --accent-edge: rgba(0, 245, 255, 0.42); --on-accent: #00181a; }
+.s-fit  { --accent: var(--fit);  --accent-line: var(--fit);  --accent-soft: rgba(57, 255, 20, 0.13); --accent-edge: rgba(57, 255, 20, 0.42); --on-accent: #041a02; }
+.s-lit  { --accent: var(--lit);  --accent-line: #bd82fb;     --accent-soft: rgba(168, 85, 247, 0.20); --accent-edge: rgba(168, 85, 247, 0.50); --on-accent: #12062a; }
 
 /* ---------- rounded corners ---------- */
 
-ul, .menu, .table-wrap, .stat, .chart-box, .featured, .empty, .error, .move-note { border-radius: var(--r-card); }
+ul, .table-wrap, .stat, .chart-box, .featured, .empty, .error, .move-note { border-radius: var(--r-card); }
 /* hidden overflow clips the rows (and a habit's tint) to the rounded corners */
-ul, .menu, .table-wrap { overflow: hidden; }
+ul, .table-wrap { overflow: hidden; }
 dialog.dialog { border-radius: 24px; overflow: hidden; }
 input, textarea { border-radius: var(--r-field); }
 td input { border-radius: 0; }
@@ -833,10 +729,6 @@ button.block, button.small, button.icon, button.big, button.wide { border-radius
 .macros td.act button { border-radius: 0; }
 .count { border-radius: 12px; }
 .pip { border-radius: 5px; }
-.back-arrow { border-radius: 50%; }
-
-/* the "PRO" of the logo word is the brand cyan */
-.bar h1 .wordmark { color: var(--prod); }
 
 /* ---------- neon glow on the main buttons ---------- */
 
@@ -860,5 +752,196 @@ button.add { box-shadow: 0 6px 22px -10px var(--accent); }
 #chart .line.minutes { stroke: var(--ink); }
 #chart .dot.minutes { fill: var(--ink); }
 .swatch.minutes { background: var(--ink); }
+
+
+
+/* ---------- app shell: page title, page switcher, tab bar, account sheet ---------- */
+
+.i { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 0 4px 16px; }
+.eyebrow { margin: 0 0 4px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent-line); }
+.eyebrow.muted { color: var(--muted); }
+.page-head h1 { margin: 0; font-size: 2.1rem; line-height: 1.08; font-weight: 700; letter-spacing: -0.028em; }
+.page-head h1 .wordmark { color: var(--prod); }
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--surface-3), var(--surface));
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  cursor: pointer;
+}
+
+/* the switcher between the pages of one section */
+.seg { display: flex; gap: 2px; margin: 0 0 16px; padding: 3px; background: var(--surface); border-radius: 14px; }
+.seg a {
+  flex: 1;
+  padding: 10px 6px;
+  border-radius: 11px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color var(--ease), color var(--ease);
+}
+.seg a.on { background: var(--accent-soft); color: var(--accent-line); box-shadow: inset 0 0 0 1px var(--accent-edge); }
+
+/* the shell only shows once someone is signed in */
+body:not(.signed-in) .tabbar,
+body:not(.signed-in) .seg,
+body:not(.signed-in) .page-head .avatar { display: none; }
+
+.tabbar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  z-index: 6;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: min(calc(100% - 28px), 492px);
+  height: 68px;
+  padding: 6px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 34px;
+  background: rgba(26, 26, 46, 0.78);
+  -webkit-backdrop-filter: blur(26px) saturate(1.6);
+  backdrop-filter: blur(26px) saturate(1.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 28px;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--ease), color var(--ease);
+}
+.tab[data-sec="home"] { --tab: #ffffff; --tab-soft: rgba(255, 255, 255, 0.12); }
+.tab[data-sec="prod"] { --tab: var(--prod); --tab-soft: rgba(0, 245, 255, 0.14); }
+.tab[data-sec="fit"] { --tab: var(--fit); --tab-soft: rgba(57, 255, 20, 0.13); }
+.tab[data-sec="lit"] { --tab: #bd82fb; --tab-soft: rgba(168, 85, 247, 0.2); }
+.tab.on { background: var(--tab-soft); color: var(--tab); }
+.tab.on .i { filter: drop-shadow(0 0 5px var(--tab)); }
+
+/* the account sheet, opened by the avatar */
+.sheet-bg { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, 0.6); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.sheet-bg.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  z-index: 21;
+  width: min(calc(100% - 20px), 500px);
+  padding: 20px;
+  border-radius: 30px;
+  background: var(--surface-2);
+  transform: translate(-50%, 130%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.sheet.open { transform: translate(-50%, 0); }
+.sheet .who { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.sheet .who b { display: block; font-size: 1.05rem; }
+.sheet .who span { font-size: 0.85rem; color: var(--muted); overflow-wrap: anywhere; }
+.sheet .saved { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 12px 14px; border-radius: 14px; background: var(--surface-3); font-size: 0.9rem; color: var(--muted); }
+.sheet .saved .i { color: var(--accent-line); }
+.sheet button.block { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; height: 54px; border-radius: 18px; font-size: 1.05rem; }
+#sign-out { background: var(--surface-3); }
+
+.gate-logo { display: block; width: 96px; height: 96px; margin: 8px 0 18px; border-radius: 24px; }
+
+/* ---------- home: sections of tiles ---------- */
+
+.home-section { margin-top: 26px; }
+.home-section:first-of-type { margin-top: 4px; }
+.sec-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sec-label::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+.bento { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.span2 { grid-column: span 2; }
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 134px;
+  padding: 14px;
+  border-radius: 24px;
+  color: var(--ink);
+  text-decoration: none;
+  background: linear-gradient(155deg, var(--accent-soft) 0%, rgba(26, 26, 46, 0) 70%), var(--surface);
+  box-shadow: inset 0 0 0 1px var(--accent-edge), 0 0 22px -12px var(--accent);
+  transition: transform 0.12s, filter 0.12s;
+}
+.tile:active { transform: scale(0.97); filter: brightness(0.9); }
+.tile:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+.tile.wide { flex-direction: row; align-items: center; justify-content: flex-start; gap: 14px; min-height: 0; padding: 14px 16px; }
+.tile.today { flex-direction: row; align-items: center; justify-content: flex-start; gap: 18px; min-height: 0; padding: 16px; }
+.tile-chip {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 0 16px -3px var(--accent);
+}
+.tile h3 { margin: 0; font-size: 1.05rem; font-weight: 650; letter-spacing: -0.015em; }
+.tile-value { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.tile-value small { margin-left: 3px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0; color: var(--muted); }
+.tile-meta { margin: 4px 0 0; font-size: 0.82rem; color: var(--muted); }
+.tile-go { margin-left: auto; color: var(--faint); }
+
+.today-rings { flex: none; filter: drop-shadow(0 0 6px rgba(57, 255, 20, 0.35)); }
+.today-lines { display: grid; flex: 1; gap: 14px; min-width: 0; }
+.today-lines b { display: block; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.today-lines b small { margin-left: 3px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.today-label { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.today-label i { width: 10px; height: 10px; border-radius: 3px; }
+
+/* the quote on the home page: a card, in the colour of Literature */
+.home-quote {
+  margin: 12px 0 0;
+  padding: 20px 20px 18px;
+  border: 0;
+  border-radius: 24px;
+  background: linear-gradient(155deg, var(--accent-soft), rgba(26, 26, 46, 0) 70%), var(--surface);
+  box-shadow: inset 0 0 0 1px var(--accent-edge);
+}
+.home-quote::before { content: none; }
+.home-quote .quote-text { margin: 0; font-size: clamp(1.15rem, 4.8vw, 1.4rem); line-height: 1.4; font-style: normal; }
+.home-quote .quote-author { margin-top: 12px; text-align: left; font-variant: normal; letter-spacing: 0; font-style: italic; }
+.home-quote .qm { margin-bottom: 6px; color: var(--accent-line); }
 
 [hidden] { display: none !important; }

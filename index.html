@@ -11,34 +11,35 @@
   <!-- start downloading the Firebase files at once instead of one step after another -->
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com">
-  <link rel="modulepreload" href="firebase.js?v=40">
+  <link rel="modulepreload" href="firebase.js?v=41">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js">
-  <link rel="modulepreload" href="home.js?v=40">
+  <link rel="modulepreload" href="home.js?v=41">
+  <link rel="modulepreload" href="goals.js?v=41">
   <!-- Chrome only: starts loading a page in the background when you hover or press its button -->
   <script type="speculationrules">
   {"prerender": [{"source": "list", "urls": ["habits.html", "nutrition.html", "macros.html", "weight.html", "reading.html", "quotes.html"],
                   "eagerness": "moderate"}]}
   </script>
-  <link rel="icon" type="image/png" href="favicon.png?v=40">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=40">
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="icon" type="image/png" href="favicon.png?v=41">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=41">
+  <link rel="stylesheet" href="style.css?v=41">
 </head>
-<body>
-  <header class="bar">
-    <div class="bar-inner">
-      <span class="back-slot" aria-hidden="true"></span>
-      <a class="logo" href="./"><img src="logo.png?v=40" alt="PROductive logo" width="44" height="44"></a>
-      <h1><span class="wordmark">PRO</span>ductive</h1>
-    </div>
-  </header>
+<body data-section="home">
   <main>
+    <header class="page-head">
+      <div>
+        <p id="today-label" class="eyebrow muted"></p>
+        <h1 id="heading"><span class="wordmark">PRO</span>ductive</h1>
+      </div>
+    </header>
 
     <!-- shown until Firebase reports whether someone is signed in, so the page is never blank -->
     <p id="checking" class="gate-text">Checking sign-in&hellip;</p>
 
     <section id="gate" class="gate" hidden>
+      <img class="gate-logo" src="logo.png?v=41" width="96" height="96" alt="">
       <p class="gate-text">Sign in with Google to continue.</p>
       <button id="sign-in" type="button" class="block primary">Sign in with Google</button>
       <p id="gate-message" class="error" role="alert" hidden></p>
@@ -47,72 +48,76 @@
     <div id="content" hidden>
       <p id="error" class="error" role="alert" hidden></p>
 
-      <nav aria-label="Pages">
-        <section class="menu-section s-prod">
-          <h2 class="menu-title">Productivity</h2>
-          <div class="menu">
-            <a class="tile" href="habits.html">
-              <span class="tile-name">Habits Streak</span>
-              <span class="tile-arrow" aria-hidden="true">&rsaquo;</span>
-            </a>
-            <a class="tile" href="pomodoro.html">
-              <span class="tile-name">Pomodoro</span>
-              <span class="tile-arrow" aria-hidden="true">&rsaquo;</span>
-            </a>
-          </div>
-        </section>
-        <section class="menu-section s-fit">
-          <h2 class="menu-title">Fitness</h2>
-          <div class="menu">
-            <a class="tile" href="nutrition.html">
-              <span class="tile-name">Macros Tracker</span>
-              <span class="tile-arrow" aria-hidden="true">&rsaquo;</span>
-            </a>
-            <a class="tile" href="macros.html">
-              <span class="tile-name">Macros Menu</span>
-              <span class="tile-arrow" aria-hidden="true">&rsaquo;</span>
-            </a>
-            <a class="tile" href="weight.html">
-              <span class="tile-name">Weight Tracker</span>
-              <span class="tile-arrow" aria-hidden="true">&rsaquo;</span>
-            </a>
-          </div>
-        </section>
-        <section class="menu-section s-lit">
-          <h2 class="menu-title">Literature</h2>
-          <div class="menu">
-            <a class="tile" href="reading.html">
-              <span class="tile-name">Reading Session</span>
-              <span class="tile-arrow" aria-hidden="true">&rsaquo;</span>
-            </a>
-            <a class="tile" href="quotes.html">
-              <span class="tile-name">Quotes</span>
-              <span class="tile-arrow" aria-hidden="true">&rsaquo;</span>
-            </a>
-          </div>
-        </section>
-      </nav>
+      <!-- Fitness first: it holds the numbers you look at every day -->
+      <section class="home-section s-fit" aria-labelledby="sec-fit">
+        <h2 id="sec-fit" class="sec-label">Fitness</h2>
+        <div class="bento">
+          <a class="tile span2 today" href="nutrition.html" aria-label="Macros Tracker">
+            <svg class="today-rings" viewBox="0 0 128 128" width="112" height="112" aria-hidden="true">
+              <g transform="rotate(-90 64 64)">
+                <circle cx="64" cy="64" r="54" fill="none" stroke="#39ff14" stroke-opacity=".2" stroke-width="12"/>
+                <circle id="ring-calories" cx="64" cy="64" r="54" fill="none" stroke="#39ff14" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 339.3"/>
+                <circle cx="64" cy="64" r="37" fill="none" stroke="#ff00b8" stroke-opacity=".2" stroke-width="12"/>
+                <circle id="ring-protein" cx="64" cy="64" r="37" fill="none" stroke="#ff00b8" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 232.5"/>
+              </g>
+            </svg>
+            <div class="today-lines">
+              <div><span class="today-label"><i style="background:#39ff14"></i>Calories</span><b><span id="today-calories">&mdash;</span><small id="today-calories-goal"></small></b></div>
+              <div><span class="today-label"><i style="background:#ff00b8"></i>Protein</span><b><span id="today-protein">&mdash;</span><small id="today-protein-goal"></small></b></div>
+            </div>
+            <svg class="i tile-go" width="20" height="20" aria-hidden="true"><use href="#i-right"/></svg>
+          </a>
+          <a class="tile span2 wide" href="macros.html">
+            <span class="tile-chip"><svg class="i" width="22" height="22" aria-hidden="true"><use href="#i-utensils"/></svg></span>
+            <div><h3>Macros Menu</h3><p id="foods-count" class="tile-meta" style="margin:0">&nbsp;</p></div>
+            <svg class="i tile-go" width="20" height="20" aria-hidden="true"><use href="#i-right"/></svg>
+          </a>
+        </div>
+      </section>
+
+      <section class="home-section s-prod" aria-labelledby="sec-prod">
+        <h2 id="sec-prod" class="sec-label">Productivity</h2>
+        <div class="bento">
+          <a class="tile" href="habits.html">
+            <span class="tile-chip"><svg class="i" width="22" height="22" aria-hidden="true"><use href="#i-flame"/></svg></span>
+            <div><h3>Habits</h3><span class="tile-value"><span id="habit-count">&mdash;</span><small>habits</small></span><p id="habit-best" class="tile-meta">&nbsp;</p></div>
+          </a>
+          <a class="tile" href="pomodoro.html">
+            <span class="tile-chip"><svg class="i" width="22" height="22" aria-hidden="true"><use href="#i-timer"/></svg></span>
+            <div><h3>Pomodoro</h3><span class="tile-value"><span id="pomo-focus">25</span><small>min focus</small></span><p id="pomo-sessions" class="tile-meta">4 sessions</p></div>
+          </a>
+        </div>
+      </section>
+
+      <section class="home-section s-lit" aria-labelledby="sec-lit">
+        <h2 id="sec-lit" class="sec-label">Literature</h2>
+        <div class="bento">
+          <a class="tile" href="reading.html">
+            <span class="tile-chip"><svg class="i" width="22" height="22" aria-hidden="true"><use href="#i-book"/></svg></span>
+            <div><h3>Reading</h3><span class="tile-value"><span id="read-pages">&mdash;</span><small>pages today</small></span><p id="read-book" class="tile-meta" dir="auto">&nbsp;</p></div>
+          </a>
+          <a class="tile" href="quotes.html">
+            <span class="tile-chip"><svg class="i" width="22" height="22" aria-hidden="true"><use href="#i-quote"/></svg></span>
+            <div><h3>Quotes</h3><span class="tile-value"><span id="quotes-count">&mdash;</span><small>saved</small></span></div>
+          </a>
+        </div>
+        <!-- one random quote from your Quotes page, picked again on every page load -->
+        <blockquote id="home-quote" class="home-quote" hidden>
+          <p id="home-quote-text" class="quote-text" dir="auto"></p>
+          <footer id="home-quote-author" class="quote-author" dir="auto"></footer>
+        </blockquote>
+      </section>
 
       <!-- shown only while data from before accounts existed is still waiting to be copied over -->
       <button id="move" type="button" class="block primary" hidden>Move my existing data into this account</button>
       <p id="move-note" class="move-note" hidden></p>
-
-      <!-- one random quote from your Quotes page, picked again on every page load -->
-      <blockquote id="home-quote" class="featured-quote home-quote" hidden>
-        <p id="home-quote-text" class="quote-text" dir="auto"></p>
-        <footer id="home-quote-author" class="quote-author" dir="auto"></footer>
-      </blockquote>
-
-      <div class="session">
-        <span id="status" class="account">Loading&hellip;</span>
-        <button id="sign-out" type="button" class="small">Sign out</button>
-      </div>
     </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 40 &middot; 2026-11-04 09:50</footer>
+    <footer id="build">Build 41 &middot; 2026-11-04 10:00</footer>
   </main>
 
-  <script type="module" src="home.js?v=40"></script>
+  <script src="nav.js?v=41"></script>
+  <script type="module" src="home.js?v=41"></script>
 </body>
 </html>

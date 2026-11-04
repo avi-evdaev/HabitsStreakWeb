@@ -1,8 +1,8 @@
 import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, deleteDoc,
-} from "./firebase.js?v=40";
-import { drawLineChart } from "./chart.js?v=40";
+} from "./firebase.js?v=41";
+import { drawLineChart } from "./chart.js?v=41";
 
 const RUN_KEY = "reading.run";
 const MAX_PAGES = 5000;

@@ -2,8 +2,8 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=40";
-import { GOAL_DEFAULTS, GOAL_MAX } from "./goals.js?v=40";
+} from "./firebase.js?v=41";
+import { GOAL_DEFAULTS, GOAL_MAX } from "./goals.js?v=41";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
