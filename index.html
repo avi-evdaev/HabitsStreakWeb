@@ -6,31 +6,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#0b0b12">
   <title>PROductive</title>
   <!-- start downloading the Firebase files at once instead of one step after another -->
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com">
-  <link rel="modulepreload" href="firebase.js?v=39">
+  <link rel="modulepreload" href="firebase.js?v=40">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js">
-  <link rel="modulepreload" href="home.js?v=39">
+  <link rel="modulepreload" href="home.js?v=40">
   <!-- Chrome only: starts loading a page in the background when you hover or press its button -->
   <script type="speculationrules">
   {"prerender": [{"source": "list", "urls": ["habits.html", "nutrition.html", "macros.html", "weight.html", "reading.html", "quotes.html"],
                   "eagerness": "moderate"}]}
   </script>
-  <link rel="icon" type="image/png" href="favicon.png?v=39">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=39">
-  <link rel="stylesheet" href="style.css?v=39">
+  <link rel="icon" type="image/png" href="favicon.png?v=40">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=40">
+  <link rel="stylesheet" href="style.css?v=40">
 </head>
 <body>
   <header class="bar">
     <div class="bar-inner">
       <span class="back-slot" aria-hidden="true"></span>
-      <a class="logo" href="./"><img src="logo.png?v=39" alt="PROductive logo" width="44" height="44"></a>
-      <h1>PROductive</h1>
+      <a class="logo" href="./"><img src="logo.png?v=40" alt="PROductive logo" width="44" height="44"></a>
+      <h1><span class="wordmark">PRO</span>ductive</h1>
     </div>
   </header>
   <main>
@@ -48,7 +48,7 @@
       <p id="error" class="error" role="alert" hidden></p>
 
       <nav aria-label="Pages">
-        <section class="menu-section">
+        <section class="menu-section s-prod">
           <h2 class="menu-title">Productivity</h2>
           <div class="menu">
             <a class="tile" href="habits.html">
@@ -61,7 +61,7 @@
             </a>
           </div>
         </section>
-        <section class="menu-section">
+        <section class="menu-section s-fit">
           <h2 class="menu-title">Fitness</h2>
           <div class="menu">
             <a class="tile" href="nutrition.html">
@@ -78,7 +78,7 @@
             </a>
           </div>
         </section>
-        <section class="menu-section">
+        <section class="menu-section s-lit">
           <h2 class="menu-title">Literature</h2>
           <div class="menu">
             <a class="tile" href="reading.html">
@@ -110,9 +110,9 @@
     </div>
 
     <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
-    <footer id="build">Build 39 &middot; 2026-11-04 09:14</footer>
+    <footer id="build">Build 40 &middot; 2026-11-04 09:50</footer>
   </main>
 
-  <script type="module" src="home.js?v=39"></script>
+  <script type="module" src="home.js?v=40"></script>
 </body>
 </html>

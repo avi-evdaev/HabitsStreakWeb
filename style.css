@@ -1,33 +1,43 @@
-/* PROductive: true black, hairlines, sharp corners. The palette is Apple's dark-interface palette. */
+/* PROductive: neon on near-black, rounded cards. Cyan, green and purple mark the three kinds of page. */
 :root {
-  --bg: #000000;
-  --surface: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --surface-3: #3a3a3c;
-  --ink: #ffffff;
-  --muted: #98989f;
-  --faint: #636366;
-  --line: #2c2c2e;
-  --line-strong: #48484a;
-  --accent: #0071e3;          /* fills: white text on it passes contrast */
-  --accent-line: #2997ff;     /* blue text, lines and chart on black */
-  --accent-soft: rgba(41, 151, 255, 0.16);
-  --on-accent: #ffffff;
+  --bg: #0b0b12;
+  --surface: #1a1a2e;
+  --surface-2: #252540;
+  --surface-3: #30304f;
+  --ink: #f5f5f7;
+  --muted: #9d9dba;
+  --faint: #6b6b8a;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.18);
+
+  /* the colour of each kind of page, and the pink used for protein */
+  --prod: #00f5ff;            /* Productivity: habits, pomodoro */
+  --fit: #39ff14;             /* Fitness: macros tracker, macros menu, weight */
+  --lit: #a855f7;             /* Literature: reading, quotes */
+  --pro: #ff00b8;             /* protein, next to the calories line */
+
+  /* the accent of the current page. A page picks one with a class (s-prod, s-fit, s-lit); the
+     default is the brand cyan. Text on a neon fill is dark, because white on neon is too faint. */
+  --accent: #00f5ff;          /* fills */
+  --accent-line: #00f5ff;     /* text, lines and chart on the dark background */
+  --accent-soft: rgba(0, 245, 255, 0.14);
+  --on-accent: #00181a;
+
   --danger: #ff453a;
   --danger-soft: rgba(255, 69, 58, 0.14);
   /* one height for every input and button, so nothing looks bigger than its neighbour */
   --cell: 48px;
   --ease: 0.16s ease;
+  --r-card: 20px;
+  --r-field: 14px;
   /* An old-book serif for the quotes: Baskerville ships with macOS and iOS */
   --book: Baskerville, "Baskerville Old Face", "Libre Baskerville", Georgia, "Times New Roman", serif;
-  /* dark only: the app is black by design */
+  /* dark only */
   color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
-  /* iOS gives inputs and buttons rounded corners by default; this keeps every corner sharp */
-  border-radius: 0;
   -webkit-appearance: none;
   appearance: none;
   /* no double-tap-to-zoom on iPhone; scrolling and pinch-zoom still work */
@@ -71,7 +81,7 @@ main {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #000000;
+  background: var(--bg);
   color: #ffffff;
   border-bottom: 1px solid var(--line);
   padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
@@ -409,7 +419,7 @@ thead th {
   top: 0;
   z-index: 1;
   padding: 12px 8px;
-  background: #000000;
+  background: var(--surface);
   color: var(--muted);
   font-size: 0.7rem;
   font-weight: 600;
@@ -585,7 +595,7 @@ td.cell { height: 48px; padding: 0 12px; text-align: center; font-size: 1.05rem;
 /* the flex box is an inner div: display:flex on the td itself would break the table columns */
 .weight-inner { display: flex; align-items: center; justify-content: space-between; }
 .weight-inner span { flex: 1; }
-td.weight-cell button.icon { flex: none; width: 36px; height: 36px; font-size: 1.1rem; }
+.weight-inner button.icon { flex: none; width: 36px; height: 36px; font-size: 1.1rem; }
 #log-weight { margin-top: 12px; }
 #chart .line.weight { stroke: var(--accent-line); }
 #chart .dot.weight { fill: var(--accent-line); }
@@ -792,5 +802,63 @@ button.small:active { opacity: 0.7; }
   letter-spacing: 0.06em;
   color: var(--faint);
 }
+
+
+/* ---------- the colour of each kind of page ---------- */
+
+.s-prod { --accent: var(--prod); --accent-line: var(--prod); --accent-soft: rgba(0, 245, 255, 0.14); --on-accent: #00181a; }
+.s-fit  { --accent: var(--fit);  --accent-line: var(--fit);  --accent-soft: rgba(57, 255, 20, 0.13); --on-accent: #041a02; }
+.s-lit  { --accent: var(--lit);  --accent-line: #bd82fb;     --accent-soft: rgba(168, 85, 247, 0.20); --on-accent: #12062a; }
+
+/* a coloured dot in front of each section name on the home page */
+.menu-title { display: flex; align-items: center; gap: 8px; }
+.menu-title::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* ---------- rounded corners ---------- */
+
+ul, .menu, .table-wrap, .stat, .chart-box, .featured, .empty, .error, .move-note { border-radius: var(--r-card); }
+/* hidden overflow clips the rows (and a habit's tint) to the rounded corners */
+ul, .menu, .table-wrap { overflow: hidden; }
+dialog.dialog { border-radius: 24px; overflow: hidden; }
+input, textarea { border-radius: var(--r-field); }
+td input { border-radius: 0; }
+button.block, button.small, button.icon, button.big, button.wide { border-radius: var(--r-field); }
+.macros td.act button { border-radius: 0; }
+.count { border-radius: 12px; }
+.pip { border-radius: 5px; }
+.back-arrow { border-radius: 50%; }
+
+/* the "PRO" of the logo word is the brand cyan */
+.bar h1 .wordmark { color: var(--prod); }
+
+/* ---------- neon glow on the main buttons ---------- */
+
+button.block.primary,
+button.inc,
+button.add { box-shadow: 0 6px 22px -10px var(--accent); }
+
+/* ---------- chart colours: calories take the page's colour, protein is pink ---------- */
+
+#chart .line.calories, #chart .guide.calories { stroke: var(--accent-line); }
+#chart .dot.calories { fill: var(--accent-line); }
+.swatch.calories { background: var(--accent-line); }
+#chart .line.protein, #chart .guide.protein { stroke: var(--pro); }
+#chart .dot.protein { fill: var(--pro); }
+#chart text.guide-label.protein { fill: var(--pro); }
+.swatch.protein { background: var(--pro); }
+/* reading: pages in the page's colour, minutes in white */
+#chart .line.pages { stroke: var(--accent-line); }
+#chart .dot.pages { fill: var(--accent-line); }
+.swatch.pages { background: var(--accent-line); }
+#chart .line.minutes { stroke: var(--ink); }
+#chart .dot.minutes { fill: var(--ink); }
+.swatch.minutes { background: var(--ink); }
 
 [hidden] { display: none !important; }

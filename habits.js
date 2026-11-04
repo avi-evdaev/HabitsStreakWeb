@@ -2,20 +2,20 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=39";
-import { GOAL_DEFAULTS, GOAL_MAX } from "./goals.js?v=39";
+} from "./firebase.js?v=40";
+import { GOAL_DEFAULTS, GOAL_MAX } from "./goals.js?v=40";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_ORDER_ITEMS = 500;
 
-// A habit row grows greener with its streak: grey at 0, a little greener with each day, full green at
-// HEAT_FULL_AT and beyond. The grey end is the normal row grey, so a habit at 0 looks unchanged. The
-// green is dark enough for white text on it to stay readable.
+// A habit row grows more teal with its streak: the card colour at 0, a little more with each day, full
+// teal at HEAT_FULL_AT and beyond. The start is the normal row colour, so a habit at 0 looks unchanged.
+// The teal is dark enough for white text on it to stay readable.
 const HEAT_FULL_AT = 10;
-const COOL_RGB = [28, 28, 30];
-const HOT_RGB = [24, 134, 64];
+const COOL_RGB = [26, 26, 46];
+const HOT_RGB = [0, 112, 124];
 
 // Built-in habits. Their numbers are not typed in: each one is the current day streak on the
 // Macros Tracker page, meaning finished days in a row whose logged value passes a test against a number
