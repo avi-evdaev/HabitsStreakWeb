@@ -2,8 +2,8 @@ import {
   db, initGate, createSaveTracker, describeFirestoreError,
   collection, doc, query, orderBy, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, increment,
   writeBatch,
-} from "./firebase.js?v=38";
-import { GOAL_DEFAULTS, GOAL_MAX } from "./goals.js?v=38";
+} from "./firebase.js?v=39";
+import { GOAL_DEFAULTS, GOAL_MAX } from "./goals.js?v=39";
 
 // Where this page kept its data before it moved to the database
 const LEGACY_KEY = "habitsStreak.habits";
@@ -18,7 +18,7 @@ const COOL_RGB = [28, 28, 30];
 const HOT_RGB = [24, 134, 64];
 
 // Built-in habits. Their numbers are not typed in: each one is the current day streak on the
-// Tracker page, meaning finished days in a row whose logged value passes a test against a number
+// Macros Tracker page, meaning finished days in a row whose logged value passes a test against a number
 // the person sets for themselves.
 // Everyone starts at the fallback and can change their own (kept in the account's settings).
 const AUTO_HABITS = [
@@ -28,7 +28,7 @@ const AUTO_HABITS = [
     fallback: GOAL_DEFAULTS.proteinTarget,
     max: GOAL_MAX.proteinTarget,
     title: (value) => "Protein " + value + " g",
-    note: () => "Day streak, from Tracker. Resets if a day is missed",
+    note: () => "Day streak, from Macros Tracker. Resets if a day is missed",
     passes: (logged, value) => logged >= value,
     changeLabel: "Change the protein target",
     dialogTitle: "Protein target",
@@ -76,7 +76,7 @@ const habitDoc = (id) => doc(db, "users", userId, "habits", id);
 const saves = createSaveTracker(statusEl, showError);
 
 let habits = [];
-// date key (YYYY-MM-DD) -> { calories, protein }, as logged on the Tracker page
+// date key (YYYY-MM-DD) -> { calories, protein }, as logged on the Macros Tracker page
 let nutritionByDay = {};
 let settings = defaultSettings();
 // The order the person chose, as a list of ids: the id of a habit, or "auto:<field>" for a built-in one.
@@ -135,7 +135,7 @@ function listen() {
   }, showError);
 }
 
-// The Tracker data comes from the same database, so the built-in habits are always computed from
+// The Macros Tracker data comes from the same database, so the built-in habits are always computed from
 // the current numbers instead of being stored: edit a past day there and they follow.
 const nutritionCollection = () => collection(db, "users", userId, "nutrition");
 

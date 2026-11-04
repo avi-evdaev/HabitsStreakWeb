@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover + the meta below make it look right when added to the iPhone home screen -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#000000">
+  <title>Weight Tracker</title>
+  <!-- start downloading the Firebase files at once instead of one step after another -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <link rel="modulepreload" href="firebase.js?v=39">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js">
+  <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js">
+  <link rel="modulepreload" href="weight.js?v=39">
+  <link rel="modulepreload" href="chart.js?v=39">
+  <link rel="icon" type="image/png" href="favicon.png?v=39">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=39">
+  <link rel="stylesheet" href="style.css?v=39">
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-inner">
+      <a class="back-arrow" href="./" aria-label="Back to home"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg></a>
+      <a class="logo" href="./"><img src="logo.png?v=39" alt="PROductive home" width="44" height="44"></a>
+      <h1>Weight Tracker</h1>
+    </div>
+  </header>
+  <main>
+
+    <!-- shown until Firebase reports whether someone is signed in, so the page is never blank -->
+    <p id="checking" class="gate-text">Checking sign-in&hellip;</p>
+
+    <section id="gate" class="gate" hidden>
+      <p class="gate-text">Sign in to see your weight.</p>
+      <button id="sign-in" type="button" class="block primary">Sign in with Google</button>
+      <p id="gate-message" class="error" role="alert" hidden></p>
+    </section>
+
+    <div id="content" hidden>
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <div id="table-wrap" class="table-wrap" hidden>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Time</th>
+              <th scope="col">Weight (kg)</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p id="empty" class="empty" hidden>No weights yet.</p>
+
+      <button id="log-weight" type="button" class="block primary big">Log weight</button>
+
+      <section class="stats" aria-label="Weight summary">
+        <div class="stat">
+          <span class="stat-label">Latest (kg)</span>
+          <span id="latest" class="stat-value">&mdash;</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Change (kg)</span>
+          <span id="change" class="stat-value">&mdash;</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Logs</span>
+          <span id="log-count" class="stat-value">&mdash;</span>
+        </div>
+      </section>
+
+      <section class="chart-box" aria-labelledby="chart-title">
+        <h2 id="chart-title" class="chart-title">Weight over time</h2>
+        <svg id="chart" viewBox="0 0 360 300" role="img"
+             aria-label="Line chart of logged weights, oldest on the left. The table above has the same numbers."></svg>
+        <p class="chart-note">Shows your last 60 logs, one point per log. Change is the latest weight minus the first one.</p>
+      </section>
+
+      <dialog id="weight-dialog" class="dialog" aria-labelledby="weight-title">
+        <form id="weight-form" class="dialog-form">
+          <h2 id="weight-title" class="dialog-title">Log weight</h2>
+          <p class="dialog-note">The date and time are saved automatically.</p>
+          <label for="weight-input" class="form-label">Weight (kg)</label>
+          <input id="weight-input" type="number" inputmode="decimal" min="20" max="500" step="0.1"
+                 placeholder="0.0" autofocus>
+          <p id="weight-error" class="error" role="alert" hidden></p>
+          <div class="dialog-actions">
+            <button type="button" id="weight-cancel" class="block">Cancel</button>
+            <button type="submit" class="block primary">Save</button>
+          </div>
+        </form>
+      </dialog>
+
+      <div class="session">
+        <span id="status">Loading&hellip;</span>
+        <button id="sign-out" type="button" class="small">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Bump this number on every commit so a stale cached copy is easy to spot -->
+    <footer id="build">Build 39 &middot; 2026-11-04 09:14</footer>
+  </main>
+
+  <script type="module" src="weight.js?v=39"></script>
+</body>
+</html>

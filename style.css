@@ -578,6 +578,18 @@ button.info:active { opacity: 0.6; }
 .history-list li:last-child { border-bottom: 0; }
 .history-time { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+/* ---------- weight tracker ---------- */
+
+/* plain text cells of the weight table (the nutrition table uses inputs instead) */
+td.cell { height: 48px; padding: 0 12px; text-align: center; font-size: 1.05rem; font-weight: 500; }
+/* the flex box is an inner div: display:flex on the td itself would break the table columns */
+.weight-inner { display: flex; align-items: center; justify-content: space-between; }
+.weight-inner span { flex: 1; }
+td.weight-cell button.icon { flex: none; width: 36px; height: 36px; font-size: 1.1rem; }
+#log-weight { margin-top: 12px; }
+#chart .line.weight { stroke: var(--accent-line); }
+#chart .dot.weight { fill: var(--accent-line); }
+
 /* ---------- nutrition chart ---------- */
 
 .chart-box {

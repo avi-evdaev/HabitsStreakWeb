@@ -1,5 +1,5 @@
 // The two daily goals, kept in the account's settings record (users/<id>/meta/settings). The
-// Habits page lets the person change them; the Tracker graph draws them. Both read them through
+// Habits page lets the person change them; the Macros Tracker graph draws them. Both read them through
 // here, so the defaults and the limits can never disagree between the two pages.
 
 export const GOAL_DEFAULTS = { proteinTarget: 140, calorieLimit: 2000 };

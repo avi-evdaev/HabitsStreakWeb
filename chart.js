@@ -1,4 +1,4 @@
-// A small line chart drawn as SVG, shared by the pages that have a graph (Tracker, Reading).
+// A small line chart drawn as SVG, shared by the pages that have a graph (Macros Tracker, Weight, Reading).
 // It draws into an existing <svg viewBox="0 0 360 300"> element and needs no library.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -19,7 +19,19 @@ function niceScale(maxValue, floor) {
   const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
   const step = [1, 2, 2.5, 5, 10].map((factor) => factor * magnitude)
     .find((candidate) => candidate >= rough);
-  return { step: step, top: step * Math.ceil(Math.max(maxValue, floor) / step) };
+  return { step: step, bottom: 0, top: step * Math.ceil(Math.max(maxValue, floor) / step) };
+}
+
+// Same idea, but the axis starts just under the lowest value instead of at 0. Weights sit
+// around 80 and move by a kilo or two, so an axis from 0 would draw a flat line.
+function niceZoomScale(minValue, maxValue) {
+  const rough = Math.max(maxValue - minValue, 1) / 4;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
+  const step = [1, 2, 2.5, 5, 10].map((factor) => factor * magnitude)
+    .find((candidate) => candidate >= rough);
+  const bottom = step * Math.floor(minValue / step);
+  const top = step * Math.ceil(maxValue / step);
+  return { step: step, bottom: bottom, top: top > bottom ? top : bottom + step };
 }
 
 // Splits a series into runs of consecutive days that have a value, so a blank day leaves a
@@ -51,6 +63,8 @@ function runsOf(points) {
 //   guides      [{ name, value, label, tip }]: faded dotted horizontal lines (for goals), drawn at
 //               value on the shared axis. The axis always stretches to include them.
 //   minMax      the smallest top the axis may have (default 100), so small numbers are not squashed
+//   zoom        true: the axis starts just under the lowest value instead of 0 (minMax is ignored);
+//               emptyMin is then the bottom of the axis to draw while there is no data
 //   emptyText   the note shown on an empty chart
 export function drawLineChart(svg, options) {
   svg.replaceChildren();
@@ -65,18 +79,24 @@ export function drawLineChart(svg, options) {
   const floor = options.minMax === undefined ? 100 : options.minMax;
   const guides = options.guides || [];
   const dataTop = hasData ? Math.max(...allValues) : options.emptyMax;
-  const scale = niceScale(Math.max(dataTop, ...guides.map((guide) => guide.value)), floor);
+  const highest = Math.max(dataTop, ...guides.map((guide) => guide.value));
+  const scale = options.zoom
+    ? niceZoomScale(hasData ? Math.min(...allValues) : options.emptyMin, highest)
+    : niceScale(highest, floor);
   const plotWidth = CHART.width - CHART.left - CHART.right;
   const plotHeight = CHART.height - CHART.top - CHART.bottom;
   const xAt = (index) => CHART.left + (count === 1 ? plotWidth / 2 : (index * plotWidth) / (count - 1));
-  const yAt = (value) => CHART.top + plotHeight - (value / scale.top) * plotHeight;
-  const baseline = yAt(0);
+  const yAt = (value) => CHART.top + plotHeight - ((value - scale.bottom) / (scale.top - scale.bottom)) * plotHeight;
+  const baseline = yAt(scale.bottom);
 
-  // horizontal gridlines with value labels
-  for (let value = 0; value <= scale.top + 1e-9; value += scale.step) {
+  // horizontal gridlines with value labels. Counted by index and rounded, so a step like 0.25
+  // does not pick up floating-point noise in the labels.
+  const lineCount = Math.round((scale.top - scale.bottom) / scale.step);
+  for (let lineIndex = 0; lineIndex <= lineCount; lineIndex += 1) {
+    const value = Math.round((scale.bottom + lineIndex * scale.step) * 100) / 100;
     const y = yAt(value);
     svg.append(svgEl("line", {
-      class: value === 0 ? "axis" : "grid",
+      class: lineIndex === 0 ? "axis" : "grid",
       x1: CHART.left, x2: CHART.width - CHART.right, y1: y, y2: y,
     }));
     const label = svgEl("text", { x: CHART.left - 6, y: y, "text-anchor": "end", dy: "0.35em" });
